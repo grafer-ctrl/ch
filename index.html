@@ -6,7 +6,7 @@
     <title>Gear Channel Signal Dashboard</title>
     <!-- Tailwind CSS untuk UI modern -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- TradingView Lightweight Charts untuk grafik trading profesional -->
+    <!-- TradingView Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -38,28 +38,36 @@
             <!-- Form Input Ticker -->
             <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
                 <h2 class="text-md font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i> Instrumen & Parameter
+                    <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i> Sumber Data & Parameter
                 </h2>
                 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-medium text-gray-400 mb-1">Simbol Yahoo Finance</label>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Sumber Data API</label>
+                        <select id="datasource-input" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            <option value="binance" selected>Binance API (Kripto - Sangat Stabil & Bebas CORS)</option>
+                            <option value="yahoo">Yahoo Finance (Saham/Forex - Perlu CORS Proxy)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Simbol / Ticker</label>
                         <div class="flex gap-2">
-                            <input type="text" id="symbol-input" value="EURUSD=X" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            <input type="text" id="symbol-input" value="BTCUSDT" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
                             <button id="btn-scan" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1">
                                 <i data-lucide="refresh-cw" class="w-4 h-4" id="btn-scan-icon"></i> Scan
                             </button>
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-1">Contoh: BTC-USD, EURUSD=X, ^JKSE, BBRI.JK</p>
+                        <p id="ticker-helper-text" class="text-[10px] text-gray-500 mt-1">Contoh: BTCUSDT, ETHUSDT, SOLUSDT</p>
                     </div>
 
                     <div>
                         <label class="block text-xs font-medium text-gray-400 mb-1">Timeframe (Interval)</label>
                         <select id="interval-input" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                            <option value="15m">15 Menit (Data 5 Hari)</option>
-                            <option value="30m">30 Menit (Data 5 Hari)</option>
-                            <option value="1h" selected>1 Jam (Data 1 Bulan)</option>
-                            <option value="1d">1 Hari (Data 1 Tahun)</option>
+                            <option value="15m">15 Menit</option>
+                            <option value="30m">30 Menit</option>
+                            <option value="1h" selected>1 Jam</option>
+                            <option value="1d">1 Hari</option>
                         </select>
                     </div>
 
@@ -131,11 +139,12 @@
                     <div class="text-xs text-gray-400" id="symbol-display">-</div>
                 </div>
                 <div id="chart-container" class="w-full h-[450px] bg-gray-950 rounded-lg overflow-hidden relative">
-                    <!-- Loading overlay -->
-                    <div id="loading" class="absolute inset-0 bg-gray-950/80 flex items-center justify-center z-10 hidden">
-                        <div class="flex flex-col items-center space-y-3">
-                            <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                            <span class="text-sm text-gray-300">Mengunduh data pasar...</span>
+                    <!-- Loading overlay / Error Alert -->
+                    <div id="overlay-msg" class="absolute inset-0 bg-gray-950/95 flex items-center justify-center z-10 hidden">
+                        <div id="overlay-content" class="flex flex-col items-center space-y-3 p-6 text-center max-w-md">
+                            <!-- Spinner default -->
+                            <div id="overlay-spinner" class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span id="overlay-text" class="text-sm text-gray-300">Mengunduh data pasar...</span>
                         </div>
                     </div>
                 </div>
@@ -180,11 +189,15 @@
         // Elemen UI
         const toggleAdvanced = document.getElementById('toggle-advanced');
         const advancedSettings = document.getElementById('advanced-settings');
+        const datasourceInput = document.getElementById('datasource-input');
         const symbolInput = document.getElementById('symbol-input');
+        const tickerHelperText = document.getElementById('ticker-helper-text');
         const intervalInput = document.getElementById('interval-input');
         const btnScan = document.getElementById('btn-scan');
         const btnScanIcon = document.getElementById('btn-scan-icon');
-        const loading = document.getElementById('loading');
+        const overlayMsg = document.getElementById('overlay-msg');
+        const overlaySpinner = document.getElementById('overlay-spinner');
+        const overlayText = document.getElementById('overlay-text');
         const latestSignalBox = document.getElementById('latest-signal-box');
         const ribbonStatusEl = document.getElementById('ribbon-status');
         const symbolDisplay = document.getElementById('symbol-display');
@@ -194,6 +207,17 @@
         // Toggle form parameter tambahan
         toggleAdvanced.addEventListener('click', () => {
             advancedSettings.classList.toggle('hidden');
+        });
+
+        // Ubah contoh teks saat sumber data diganti
+        datasourceInput.addEventListener('change', () => {
+            if (datasourceInput.value === 'binance') {
+                symbolInput.value = 'BTCUSDT';
+                tickerHelperText.textContent = 'Contoh: BTCUSDT, ETHUSDT, SOLUSDT, XRPUSDT';
+            } else {
+                symbolInput.value = 'EURUSD=X';
+                tickerHelperText.textContent = 'Contoh: EURUSD=X, GBPUSD=X, ^JKSE, BBRI.JK';
+            }
         });
 
         // Inisialisasi Grafik TradingView Lightweight Charts
@@ -209,8 +233,10 @@
                 chart.remove();
             }
 
+            const containerWidth = chartContainer.clientWidth || chartContainer.getBoundingClientRect().width || 800;
+
             chart = LightweightCharts.createChart(chartContainer, {
-                width: chartContainer.clientWidth,
+                width: containerWidth,
                 height: 450,
                 layout: {
                     background: { type: 'solid', color: '#111827' },
@@ -271,7 +297,8 @@
 
             // Handle responsivitas ukuran chart
             window.addEventListener('resize', () => {
-                chart.resize(chartContainer.clientWidth, 450);
+                const w = chartContainer.clientWidth || chartContainer.getBoundingClientRect().width || 800;
+                chart.resize(w, 450);
             });
         }
 
@@ -280,7 +307,6 @@
 
         // === FUNGSI MATEMATIKA / INDIKATOR ===
 
-        // Linear Weighted Moving Average (LWMA)
         function calculateLWMA(values, period) {
             let lwma = new Array(values.length).fill(null);
             let weightSum = (period * (period + 1)) / 2;
@@ -294,12 +320,10 @@
             return lwma;
         }
 
-        // Exponential Moving Average (EMA)
         function calculateEMA(values, period) {
             let ema = new Array(values.length).fill(null);
             if (values.length < period) return ema;
 
-            // Inisialisasi awal memakai rata-rata aritmetika (SMA)
             let sum = 0;
             for (let i = 0; i < period; i++) {
                 sum += values[i];
@@ -313,7 +337,6 @@
             return ema;
         }
 
-        // Average True Range (ATR)
         function calculateATR(high, low, close, period) {
             let atr = new Array(high.length).fill(null);
             if (high.length < period) return atr;
@@ -327,7 +350,6 @@
                 tr[i] = Math.max(tr1, tr2, tr3);
             }
 
-            // Simple Moving Average dari True Range
             let sum = 0;
             for (let i = 0; i < period; i++) {
                 sum += tr[i];
@@ -340,7 +362,6 @@
             return atr;
         }
 
-        // Aturan penentuan otomatis pips size
         function getPipSize(price) {
             if (price > 1000) return 1.0;
             if (price > 50) return 0.1;
@@ -348,7 +369,6 @@
             return 0.0001;
         }
 
-        // Alert suara berbasis Web Audio API
         function playAlertSound(type) {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -358,60 +378,111 @@
                 gain.connect(ctx.destination);
 
                 if (type === 'buy') {
-                    // Nada naik harmonis untuk buy
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
                     gain.gain.setValueAtTime(0.1, ctx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
                     osc.start(ctx.currentTime);
                     osc.stop(ctx.currentTime + 0.4);
                 } else {
-                    // Nada turun/peringatan tajam untuk sell
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(392.00, ctx.currentTime); // G4
-                    osc.frequency.setValueAtTime(349.23, ctx.currentTime + 0.1); // F4
-                    osc.frequency.setValueAtTime(261.63, ctx.currentTime + 0.2); // C4
+                    osc.frequency.setValueAtTime(392.00, ctx.currentTime);
+                    osc.frequency.setValueAtTime(349.23, ctx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(261.63, ctx.currentTime + 0.2);
                     gain.gain.setValueAtTime(0.08, ctx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
                     osc.start(ctx.currentTime);
                     osc.stop(ctx.currentTime + 0.4);
                 }
             } catch (e) {
-                console.warn('Gagal memutar audio alert:', e);
+                console.warn('Audio error:', e);
             }
         }
 
-        // Integrasi API Yahoo dengan CORS Bypass gratis
-        async function fetchYahooData(symbol, interval) {
-            let range = '1mo'; // Default
+        // === ENGINE KOMUNIKASI DATA ===
+
+        // Mengambil data dari Binance (CORS-Native, sangat lancar di GitHub Pages)
+        async function fetchBinanceData(symbol, interval) {
+            const limit = 500;
+            const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error("Simbol koin tidak valid atau API Binance sedang bermasalah.");
+            }
+            const data = await response.json();
+            
+            // Format keluaran Binance: array of arrays
+            return data.map(item => ({
+                time: Math.floor(item[0] / 1000), // ms ke seconds
+                open: parseFloat(item[1]),
+                high: parseFloat(item[2]),
+                low: parseFloat(item[3]),
+                close: parseFloat(item[4])
+            }));
+        }
+
+        // Mengambil data dari Yahoo Finance (Perlu melewati Proxy Fallback)
+        async function fetchYahooDataWithFallback(symbol, interval) {
+            let range = '1mo';
             if (interval === '15m' || interval === '30m') range = '5d';
             if (interval === '1d') range = '1y';
 
             const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-            // Menggunakan proxy gratis allorigins untuk melewati rintangan CORS
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`;
-
-            const response = await fetch(proxyUrl);
-            if (!response.ok) {
-                throw new Error("Gagal mengambil data dari API proxy.");
-            }
-            const data = await response.json();
             
-            if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
-                throw new Error("Format respon Yahoo Finance salah atau simbol tidak terdaftar.");
-            }
+            // Daftar proxy alternatif jika salah satu diblokir CORS
+            const proxies = [
+                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+            ];
 
-            return data.chart.result[0];
+            let lastError = null;
+            for (let i = 0; i < proxies.length; i++) {
+                try {
+                    const proxyUrl = proxies[i](yahooUrl);
+                    const response = await fetch(proxyUrl);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.chart && data.chart.result && data.chart.result.length > 0) {
+                            const result = data.chart.result[0];
+                            const timestamps = result.timestamp;
+                            const quote = result.indicators.quote[0];
+                            
+                            const candles = [];
+                            for (let j = 0; j < timestamps.length; j++) {
+                                if (quote.close[j] !== null && quote.high[j] !== null && quote.low[j] !== null && quote.open[j] !== null) {
+                                    candles.push({
+                                        time: timestamps[j],
+                                        open: quote.open[j],
+                                        high: quote.high[j],
+                                        low: quote.low[j],
+                                        close: quote.close[j]
+                                    });
+                                }
+                            }
+                            return candles;
+                        }
+                    }
+                } catch (e) {
+                    lastError = e;
+                    console.warn(`Proxy ${i+1} gagal, mencoba proxy selanjutnya...`, e);
+                }
+            }
+            throw lastError || new Error("Semua proxy CORS diblokir. Harap coba mode Binance (Kripto) yang tanpa proxy.");
         }
 
-        // === MAIN ENGINE SCANNER & PROSESOR SINYAL ===
+        // === SCANNER UTAMA ===
         async function runScanner() {
-            loading.classList.remove('hidden');
+            // Tampilkan loading screen
+            overlaySpinner.className = "w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin";
+            overlayText.textContent = "Mengunduh data pasar...";
+            overlayMsg.classList.remove('hidden');
+            
             btnScanIcon.classList.add('animate-spin');
             btnScan.disabled = true;
 
+            const dataSource = datasourceInput.value;
             const symbol = symbolInput.value.toUpperCase().trim();
             const interval = intervalInput.value;
 
@@ -424,30 +495,15 @@
             const InpSignalOffset = parseFloat(document.getElementById('signal-offset').value) || 10.0;
 
             try {
-                const result = await fetchYahooData(symbol, interval);
-                const timestamps = result.timestamp;
-                const quote = result.indicators.quote[0];
-
-                if (!timestamps || timestamps.length === 0) {
-                    throw new Error("Gagal memuat data histori instrumen.");
+                let candles = [];
+                if (dataSource === 'binance') {
+                    candles = await fetchBinanceData(symbol, interval);
+                } else {
+                    candles = await fetchYahooDataWithFallback(symbol, interval);
                 }
 
-                // Normalisasi dan hapus bar kosong (null candle)
-                const candles = [];
-                for (let i = 0; i < timestamps.length; i++) {
-                    if (quote.close[i] !== null && quote.high[i] !== null && quote.low[i] !== null && quote.open[i] !== null) {
-                        candles.push({
-                            time: timestamps[i],
-                            open: quote.open[i],
-                            high: quote.high[i],
-                            low: quote.low[i],
-                            close: quote.close[i]
-                        });
-                    }
-                }
-
-                if (candles.length < Math.max(InpMAPeriod, InpSlowMAPeriod) + 10) {
-                    throw new Error("Panjang histori candle terlalu sedikit untuk kalkulasi indikator.");
+                if (!candles || candles.length < Math.max(InpMAPeriod, InpSlowMAPeriod) + 10) {
+                    throw new Error("Panjang histori candle tidak mencukupi untuk menghitung indikator.");
                 }
 
                 const length = candles.length;
@@ -478,14 +534,7 @@
                 initializeChart();
                 symbolDisplay.textContent = `${symbol} (${interval})`;
 
-                const formattedCandles = candles.map(c => ({
-                    time: c.time,
-                    open: c.open,
-                    high: c.high,
-                    low: c.low,
-                    close: c.close
-                }));
-                candleSeries.setData(formattedCandles);
+                candleSeries.setData(candles);
 
                 const formattedUpper = candles.map((c, idx) => ({ time: c.time, value: upperBand[idx] })).filter(d => d.value !== null);
                 const formattedLower = candles.map((c, idx) => ({ time: c.time, value: lowerBand[idx] })).filter(d => d.value !== null);
@@ -501,19 +550,17 @@
                 const markers = [];
                 const historicalSignals = [];
 
-                // Ambil basis estimasi pips dari harga candle terakhir
                 const referencePrice = closes[length - 1];
                 const pipSize = getPipSize(referencePrice);
                 const offset = InpSignalOffset * pipSize;
 
-                // Loop dari indeks 3 sampai N-3 (menyisakan data paling ujung untuk swing confirmation)
+                // Loop dari indeks 3 sampai N-3 (Swing Low/High terkonfirmasi di bar k)
                 for (let k = 3; k < length - 2; k++) {
                     if (upperBand[k] === null || lowerBand[k] === null) continue;
 
                     const dateStr = new Date(candles[k].time * 1000).toLocaleString('id-ID');
 
                     // 1. Logika Sinyal BUY (Swing Low pada k)
-                    // k adalah bar i+2 dalam MQL4, k-1 adalah i+3 (lebih lama), k+1 adalah i+1 (lebih baru)
                     if (lows[k] < lows[k-1] && lows[k] < lows[k+1]) {
                         if (lows[k] <= lowerBand[k] + (5 * pipSize)) {
                             markers.push({
@@ -529,8 +576,8 @@
                                 timeRaw: candles[k].time,
                                 date: dateStr,
                                 type: 'BUY',
-                                price: lows[k].toFixed(5),
-                                bandLimit: lowerBand[k].toFixed(5),
+                                price: lows[k].toFixed(referencePrice > 100 ? 2 : 5),
+                                bandLimit: lowerBand[k].toFixed(referencePrice > 100 ? 2 : 5),
                                 status: 'Menyentuh Band Bawah'
                             });
                         }
@@ -552,8 +599,8 @@
                                 timeRaw: candles[k].time,
                                 date: dateStr,
                                 type: 'SELL',
-                                price: highs[k].toFixed(5),
-                                bandLimit: upperBand[k].toFixed(5),
+                                price: highs[k].toFixed(referencePrice > 100 ? 2 : 5),
+                                bandLimit: upperBand[k].toFixed(referencePrice > 100 ? 2 : 5),
                                 status: 'Menyentuh Band Atas'
                             });
                         }
@@ -564,7 +611,7 @@
                 candleSeries.setMarkers(markers);
 
                 // Update Tabel Riwayat Sinyal
-                historicalSignals.reverse(); // Urutkan dari yang terbaru
+                historicalSignals.reverse();
                 if (historicalSignals.length === 0) {
                     signalTableBody.innerHTML = `
                         <tr>
@@ -599,49 +646,55 @@
                     ribbonStatusEl.className = 'font-semibold text-red-400';
                 }
 
-                // Identifikasi jika ada sinyal segar baru terbentuk di bar yang baru terkonfirmasi (N-3)
+                // Sinyal terbaru dikonfirmasi
                 const lastConfirmedBarIdx = length - 3;
-                let activeSignal = null;
-
                 const lastConfirmedSignal = historicalSignals.find(s => s.timeRaw === candles[lastConfirmedBarIdx].time);
                 
                 if (lastConfirmedSignal) {
-                    activeSignal = lastConfirmedSignal;
-                    playAlertSound(activeSignal.type.toLowerCase());
-                }
-
-                if (activeSignal) {
+                    playAlertSound(lastConfirmedSignal.type.toLowerCase());
                     latestSignalBox.innerHTML = `
                         <div class="text-center">
-                            <div class="inline-flex p-3 rounded-full ${activeSignal.type === 'BUY' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} mb-2">
-                                <i data-lucide="${activeSignal.type === 'BUY' ? 'trending-up' : 'trending-down'}" class="w-8 h-8"></i>
+                            <div class="inline-flex p-3 rounded-full ${lastConfirmedSignal.type === 'BUY' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} mb-2">
+                                <i data-lucide="${lastConfirmedSignal.type === 'BUY' ? 'trending-up' : 'trending-down'}" class="w-8 h-8"></i>
                             </div>
-                            <div class="text-lg font-bold ${activeSignal.type === 'BUY' ? 'text-green-400' : 'text-red-400'}">${activeSignal.type} SIGNAL</div>
-                            <div class="text-xs text-gray-400 mt-1">Harga Swing: <span class="font-mono text-white font-semibold">${activeSignal.price}</span></div>
-                            <div class="text-[10px] text-gray-500 mt-2">Dikonfirmasi pada: ${activeSignal.date}</div>
+                            <div class="text-lg font-bold ${lastConfirmedSignal.type === 'BUY' ? 'text-green-400' : 'text-red-400'}">${lastConfirmedSignal.type} SIGNAL</div>
+                            <div class="text-xs text-gray-400 mt-1">Harga Swing: <span class="font-mono text-white font-semibold">${lastConfirmedSignal.price}</span></div>
+                            <div class="text-[10px] text-gray-500 mt-2">Dikonfirmasi pada: ${lastConfirmedSignal.date}</div>
                         </div>
                     `;
                 } else {
                     latestSignalBox.innerHTML = `
                         <div class="text-center text-gray-500 py-3">
                             <i data-lucide="minus-circle" class="w-8 h-8 mx-auto mb-2 text-gray-600"></i>
-                            <span class="text-xs">Tidak ada sinyal aktif di bar konfirmasi saat ini (Menunggu konfirmasi swing baru).</span>
+                            <span class="text-xs">Tidak ada sinyal aktif di bar konfirmasi saat ini (Menunggu swing baru).</span>
                         </div>
                     `;
                 }
 
-                lucide.createIcons();
+                // Sembunyikan loading screen jika sukses
+                overlayMsg.classList.add('hidden');
                 chart.timeScale().fitContent();
+                lucide.createIcons();
 
             } catch (err) {
                 console.error(err);
-                alert(`Error saat memproses data: ${err.message}`);
+                
+                // Tampilkan pesan error informatif pada kontainer chart (agar tidak blank)
+                overlaySpinner.className = "hidden";
+                overlayText.innerHTML = `
+                    <div class="bg-red-950/40 p-4 border border-red-800 rounded-lg max-w-sm">
+                        <p class="text-red-400 font-bold text-sm mb-2">Koneksi API Gagal</p>
+                        <p class="text-gray-300 text-xs mb-4">${err.message}</p>
+                        <p class="text-gray-400 text-[11px]">Saran: Gunakan opsi <strong>Binance API (Kripto)</strong> yang dijamin lancar tanpa perlu melewati CORS proxy.</p>
+                    </div>
+                `;
+                overlayMsg.classList.remove('hidden');
+
                 signalTableBody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="py-6 text-center text-red-400">Terjadi kegagalan pemuatan data. Mohon ganti simbol/interval atau coba lagi.</td>
+                        <td colspan="5" class="py-6 text-center text-red-400">Gagal memuat data. Mohon periksa kembali ticker atau pilih Binance API.</td>
                     </tr>`;
             } finally {
-                loading.classList.add('hidden');
                 btnScanIcon.classList.remove('animate-spin');
                 btnScan.disabled = false;
             }
@@ -650,8 +703,8 @@
         // Jalankan scanner jika tombol diklik
         btnScan.addEventListener('click', runScanner);
 
-        // Jalankan scan otomatis pertama kali saat halaman dimuat
-        setTimeout(runScanner, 1000);
+        // Scan otomatis pertama kali saat halaman dibuka
+        setTimeout(runScanner, 500);
     </script>
 </body>
 </html>
