@@ -28,39 +28,87 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
 
-    <!-- HEADER -->
-    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50 px-4 py-3">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg">
-                    <i class="fa-solid fa-chart-line text-xl"></i>
+    <!-- SIMPLE HEADER & KONTROL INTEGRASI -->
+    <header class="border-b border-slate-800 bg-slate-900/40 backdrop-blur sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col gap-3">
+            <!-- Row 1: Identitas & Info Harga -->
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-2 pb-2 border-b border-slate-800/60">
+                <div class="flex items-center gap-2">
+                    <span class="text-indigo-500 text-lg"><i class="fa-solid fa-square-poll-vertical"></i></span>
+                    <h1 class="font-bold text-sm tracking-wide uppercase text-slate-300">SBC SIGNAL PANEL</h1>
                 </div>
-                <div>
-                    <h1 class="font-bold text-lg tracking-wide">SBC STRENGTH BLOCK</h1>
-                    <p class="text-xs text-slate-400">Detektor Kekuatan Struktur Candlestick</p>
-                </div>
-            </div>
-            
-            <!-- Live Quote Info -->
-            <div class="flex items-center gap-4 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2">
-                <div>
-                    <div class="text-xs text-slate-400 font-medium">INSTRUMEN</div>
-                    <div class="font-bold text-slate-200" id="topSymbol">GBP/USD</div>
-                </div>
-                <div class="h-8 w-[1px] bg-slate-800"></div>
-                <div>
-                    <div class="text-xs text-slate-400 font-medium">HARGA TERAKHIR</div>
-                    <div class="font-bold text-emerald-400 flex items-center gap-1" id="topPrice">
+                
+                <div class="flex items-center gap-3 text-xs">
+                    <span class="text-slate-400 font-medium" id="topSymbol">GBP/USD</span>
+                    <span class="text-slate-600">|</span>
+                    <span class="font-bold text-emerald-400 flex items-center gap-1.5" id="topPrice">
                         <span>--.----</span>
-                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                    </div>
-                </div>
-                <div class="h-8 w-[1px] bg-slate-800"></div>
-                <div>
-                    <button onclick="fetchData()" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors">
-                        <i id="syncIcon" class="fa-solid fa-rotate"></i>
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    </span>
+                    <button onclick="fetchData()" class="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors" title="Refresh Manual">
+                        <i id="syncIcon" class="fa-solid fa-rotate-right"></i>
                     </button>
                 </div>
+            </div>
+
+            <!-- Row 2: Panel Kontrol Horizontal Ringkas -->
+            <div class="flex flex-wrap items-center gap-4 text-xs pt-1">
+                <!-- API Key -->
+                <div class="flex items-center gap-1.5">
+                    <span class="text-slate-400"><i class="fa-solid fa-key text-[10px]"></i></span>
+                    <input type="password" id="apiKey" class="bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded px-2 py-1 text-xs font-mono outline-none w-32" value="fb747c5e9f9d4da39b7b024548760281" placeholder="API Key">
+                </div>
+
+                <!-- Symbol Input -->
+                <div class="flex items-center gap-1.5">
+                    <span class="text-slate-400">Simbol:</span>
+                    <input type="text" id="symbol" class="bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded px-2 py-1 text-xs outline-none w-24 uppercase font-bold" value="GBP/USD">
+                </div>
+
+                <!-- Timeframe Switcher (H1, H4, D1) -->
+                <div class="flex items-center gap-1.5">
+                    <span class="text-slate-400">TF:</span>
+                    <div class="flex rounded bg-slate-950 p-0.5 border border-slate-800">
+                        <button onclick="setTF('1h')" id="tf-1h" class="px-2 py-0.5 rounded text-[10px] font-bold transition-all bg-indigo-600 text-white">H1</button>
+                        <button onclick="setTF('4h')" id="tf-4h" class="px-2 py-0.5 rounded text-[10px] font-bold transition-all text-slate-400 hover:text-white">H4</button>
+                        <button onclick="setTF('1day')" id="tf-1day" class="px-2 py-0.5 rounded text-[10px] font-bold transition-all text-slate-400 hover:text-white">D1</button>
+                    </div>
+                    <!-- Hidden input to hold state -->
+                    <input type="hidden" id="interval" value="1h">
+                </div>
+
+                <!-- Block Type -->
+                <div class="flex items-center gap-1.5">
+                    <span class="text-slate-400">Blok:</span>
+                    <select id="blockType" class="bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-1 text-[11px] outline-none" onchange="toggleBarsInput(); renderDashboard();">
+                        <option value="BLOCK_DAILY" selected>Harian (Daily)</option>
+                        <option value="BLOCK_WEEKLY">Mingguan (Weekly)</option>
+                        <option value="BLOCK_BARS">Fixed Bars</option>
+                    </select>
+                </div>
+
+                <!-- Bars Count (Hidden by default) -->
+                <div id="barsCountWrapper" class="items-center gap-1.5 hidden">
+                    <span class="text-slate-400">Bar:</span>
+                    <input type="number" id="barsCount" class="bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-1 text-[11px] outline-none w-12 text-center" value="24" min="2" onchange="renderDashboard()">
+                </div>
+
+                <!-- Show Neutral Toggle -->
+                <div class="flex items-center gap-2 border-l border-slate-800 pl-4">
+                    <span class="text-slate-400">Neutral Row:</span>
+                    <input type="checkbox" id="showNeutral" class="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-0 cursor-pointer" onchange="renderDashboard()">
+                </div>
+
+                <!-- Auto Refresh (1m) -->
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-400">Auto Refresh (1m):</span>
+                    <input type="checkbox" id="autoRefresh" class="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-0 cursor-pointer" checked>
+                </div>
+
+                <!-- Action Button -->
+                <button onclick="fetchData()" class="ml-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1 rounded transition-colors text-[11px] uppercase tracking-wider">
+                    <i class="fa-solid fa-rotate mr-1"></i> Update
+                </button>
             </div>
         </div>
     </header>
@@ -68,227 +116,152 @@
     <!-- MAIN CONTENT -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 space-y-6">
         
-        <!-- STATUS MESSAGE / BANNER ERROR -->
-        <div id="statusBanner" class="hidden p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm rounded-lg flex items-center gap-2">
+        <!-- STATUS BANNER / ERROR WARNING -->
+        <div id="statusBanner" class="hidden p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-lg flex items-center gap-2">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            <span id="statusText">Terjadi kesalahan saat memuat data.</span>
+            <span id="statusText">Error message</span>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            
-            <!-- PANEL CONTROLS (KIRI) -->
-            <div class="lg:col-span-1 bg-slate-900/40 border border-slate-800/80 rounded-xl p-5 space-y-4">
-                <h2 class="font-semibold text-sm uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-2">
-                    <i class="fa-solid fa-sliders mr-2"></i>Konfigurasi
-                </h2>
-
-                <!-- API Key -->
-                <div class="space-y-1">
-                    <label class="text-xs text-slate-400 block font-medium">Twelve Data API Key</label>
-                    <input type="password" id="apiKey" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs font-mono outline-none" value="fb747c5e9f9d4da39b7b024548760281">
+        <!-- ROW 1: SIGNAL SUMMARY GAUGE & LIVE STATS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Active Block Gauge -->
+            <div class="md:col-span-2 bg-slate-900/40 border border-slate-800 p-4 rounded-lg flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] text-indigo-400 uppercase tracking-wider font-semibold">SIGNAL BLOK SAAT INI</span>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <h3 id="signalDirection" class="text-lg font-black text-slate-300">---</h3>
+                        <span id="signalStrength" class="text-xs font-semibold text-slate-500">(--%)</span>
+                    </div>
                 </div>
-
-                <!-- Symbol -->
-                <div class="space-y-1">
-                    <label class="text-xs text-slate-400 block font-medium">Simbol (Maks. 1)</label>
-                    <input type="text" id="symbol" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs outline-none" value="GBP/USD">
-                </div>
-
-                <!-- Timeframe / Interval -->
-                <div class="space-y-1">
-                    <label class="text-xs text-slate-400 block font-medium">Timeframe (Interval)</label>
-                    <select id="interval" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs outline-none">
-                        <option value="5min">5 Menit (5m)</option>
-                        <option value="15min">15 Menit (15m)</option>
-                        <option value="30min">30 Menit (30m)</option>
-                        <option value="1h" selected>1 Jam (1H)</option>
-                        <option value="4h">4 Jam (4H)</option>
-                        <option value="1day">1 Hari (D1)</option>
-                    </select>
-                </div>
-
-                <!-- Block Type -->
-                <div class="space-y-1">
-                    <label class="text-xs text-slate-400 block font-medium">Tipe Pembagian Blok (MQL4)</label>
-                    <select id="blockType" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs outline-none" onchange="toggleBarsInput()">
-                        <option value="BLOCK_DAILY" selected>BLOCK_DAILY (Harian)</option>
-                        <option value="BLOCK_WEEKLY">BLOCK_WEEKLY (Mingguan)</option>
-                        <option value="BLOCK_BARS">BLOCK_BARS (Jumlah Bar Tetap)</option>
-                    </select>
-                </div>
-
-                <!-- Bars Count (Hidden if not BLOCK_BARS) -->
-                <div id="barsCountWrapper" class="space-y-1 hidden">
-                    <label class="text-xs text-slate-400 block font-medium">Jumlah Bar Tetap</label>
-                    <input type="number" id="barsCount" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs outline-none" value="24" min="2">
-                </div>
-
-                <!-- Show Neutral (Mode 3 Row / Mode 2 Row) -->
-                <div class="flex items-center justify-between pt-2">
-                    <span class="text-xs text-slate-400 font-medium">Tampilkan Baris Neutral (3 Row)</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="showNeutral" class="sr-only peer" onchange="renderDashboard()">
-                        <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
-                    </label>
-                </div>
-
-                <!-- Auto Refresh Toggle -->
-                <div class="flex items-center justify-between pt-2">
-                    <span class="text-xs text-slate-400 font-medium">Auto Refresh (1 Min)</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="autoRefresh" class="sr-only peer" checked>
-                        <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
-                    </label>
-                </div>
-
-                <button onclick="fetchData()" class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded transition-colors uppercase tracking-wider">
-                    <i class="fa-solid fa-play mr-1"></i> Terapkan & Ambil Data
-                </button>
-            </div>
-
-            <!-- SIGNAL & VISUALISASI CHART (KANAN) -->
-            <div class="lg:col-span-3 space-y-6">
                 
-                <!-- ROW 1: SIGNAL SUMMARY -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <!-- Gauge Signal Saat Ini -->
-                    <div class="md:col-span-2 bg-slate-900/40 border border-slate-800 p-5 rounded-xl flex flex-col justify-between">
-                        <div>
-                            <span class="text-[10px] text-indigo-400 uppercase tracking-wider font-semibold">SIGNAL BLOK SAAT INI</span>
-                            <div class="flex items-baseline gap-2 mt-1">
-                                <h3 id="signalDirection" class="text-2xl font-black">---</h3>
-                                <span id="signalStrength" class="text-sm font-semibold text-slate-400">(--%)</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Visual Gauge Bar -->
-                        <div class="my-4">
-                            <div class="flex justify-between text-[10px] text-slate-400 mb-1 font-semibold">
-                                <span class="text-rose-400" id="lblGaugeSell">SELL --%</span>
-                                <span class="text-slate-400 hidden" id="lblGaugeNeut">NEUT --%</span>
-                                <span class="text-emerald-400" id="lblGaugeBuy">BUY --%</span>
-                            </div>
-                            <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
-                                <div id="gaugeSell" class="bg-rose-600 transition-all duration-500" style="width: 50%;"></div>
-                                <div id="gaugeNeutral" class="bg-slate-600 transition-all duration-500" style="width: 0%;"></div>
-                                <div id="gaugeBuy" class="bg-emerald-600 transition-all duration-500" style="width: 50%;"></div>
-                            </div>
-                        </div>
-
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            <i class="fa-solid fa-info-circle mr-1"></i> Signal diambil berdasarkan kalkulasi total ukuran badan lilin (body candle) bullish vs bearish di dalam periodisasi blok yang sedang berjalan.
-                        </p>
+                <div class="my-2">
+                    <div class="flex justify-between text-[10px] text-slate-400 mb-1 font-semibold">
+                        <span class="text-rose-400" id="lblGaugeSell">SELL --%</span>
+                        <span class="text-slate-400 hidden" id="lblGaugeNeut">NEUT --%</span>
+                        <span class="text-emerald-400" id="lblGaugeBuy">BUY --%</span>
                     </div>
-
-                    <!-- Statistik Candlestick -->
-                    <div class="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-3 flex flex-col justify-between">
-                        <div>
-                            <span class="text-[10px] text-indigo-400 uppercase tracking-wider font-semibold">SUMMARY BLOK</span>
-                            <div class="text-xs text-slate-400 mt-1">Status lilin yang terbentuk di dalam rentang waktu aktif:</div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-slate-400"><i class="fa-solid fa-caret-up text-emerald-400 mr-1.5"></i>Lilin Bullish</span>
-                                <span class="font-bold text-slate-200" id="statsBullCount">0</span>
-                            </div>
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-slate-400"><i class="fa-solid fa-caret-down text-rose-400 mr-1.5"></i>Lilin Bearish</span>
-                                <span class="font-bold text-slate-200" id="statsBearCount">0</span>
-                            </div>
-                            <div class="flex justify-between items-center text-xs border-t border-slate-800/80 pt-2">
-                                <span class="text-slate-400">Total Rentang Blok</span>
-                                <span class="font-bold text-indigo-400" id="statsTotalBars">0 Bar</span>
-                            </div>
-                        </div>
+                    <div class="w-full h-3 bg-slate-950 rounded overflow-hidden flex border border-slate-800/80">
+                        <div id="gaugeSell" class="bg-rose-600 transition-all duration-500" style="width: 50%;"></div>
+                        <div id="gaugeNeutral" class="bg-slate-600 transition-all duration-500" style="width: 0%;"></div>
+                        <div id="gaugeBuy" class="bg-emerald-600 transition-all duration-500" style="width: 50%;"></div>
                     </div>
                 </div>
 
-                <!-- ROW 2: SUBWINDOW VISUALISASI GRID (Mirip MT4 Subwindow) -->
-                <div class="bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden">
-                    <div class="p-4 border-b border-slate-800 flex justify-between items-center">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
-                            <i class="fa-solid fa-chart-column mr-2 text-indigo-400"></i>Panel Visual Indikator (Subwindow Online)
-                        </span>
-                        <div class="flex items-center gap-2 text-[10px] text-slate-400">
-                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-emerald-600/30 border border-emerald-500 rounded-sm"></span> Buy %</span>
-                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-rose-600/30 border border-rose-500 rounded-sm"></span> Sell %</span>
-                        </div>
-                    </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">
+                    <i class="fa-solid fa-info-circle mr-1 text-slate-400"></i> Signal dihitung berdasarkan ukuran badan lilin (body candle) naik vs turun di dalam rentang waktu aktif blok saat ini.
+                </p>
+            </div>
 
-                    <!-- Visual Panel Grid -->
-                    <div class="p-4 bg-slate-950/80">
-                        <!-- Horizontal Scroll Container -->
-                        <div id="visualChart" class="flex flex-row overflow-x-auto min-h-[300px] border border-slate-800 rounded bg-slate-950 p-2 items-end gap-1 select-none">
-                            <div class="w-full text-center py-20 text-slate-500 text-sm">
-                                <i class="fa-solid fa-spinner animate-spin mr-2"></i>Menunggu data Twelve Data...
-                            </div>
-                        </div>
-                    </div>
+            <!-- Stats Block -->
+            <div class="bg-slate-900/40 border border-slate-800 p-4 rounded-lg flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] text-indigo-400 uppercase tracking-wider font-semibold">SUMMARY STRUKTUR</span>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Data lilin di dalam blok berjalan saat ini:</p>
                 </div>
 
-                <!-- ROW 3: DETIL RIWAYAT BLOK -->
-                <div class="bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden">
-                    <div class="p-4 border-b border-slate-800">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
-                            <i class="fa-solid fa-list mr-2 text-indigo-400"></i>Data Riwayat Rentang Blok
-                        </span>
+                <div class="space-y-1.5 my-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400"><i class="fa-solid fa-caret-up text-emerald-400 mr-1"></i>Lilin Bullish</span>
+                        <span class="font-bold text-slate-300" id="statsBullCount">0</span>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-300">
-                            <thead class="bg-slate-900 text-[10px] uppercase text-slate-400 font-bold border-b border-slate-800">
-                                <tr>
-                                    <th class="p-3">Rentang Tanggal/Jam (Start - End)</th>
-                                    <th class="p-3 text-center">Bull Body</th>
-                                    <th class="p-3 text-center">Bear Body</th>
-                                    <th class="p-3 text-center">Wicks (Neutral)</th>
-                                    <th class="p-3 text-center">Signal Dominan</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyTableBody" class="divide-y divide-slate-800/50">
-                                <tr>
-                                    <td colspan="5" class="p-4 text-center text-slate-500">Silakan masukkan API Key dan klik muat data.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400"><i class="fa-solid fa-caret-down text-rose-400 mr-1"></i>Lilin Bearish</span>
+                        <span class="font-bold text-slate-300" id="statsBearCount">0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs border-t border-slate-800 pt-1.5">
+                        <span class="text-slate-400">Jumlah Candlestick</span>
+                        <span class="font-bold text-indigo-400" id="statsTotalBars">0 Bar</span>
                     </div>
                 </div>
-
             </div>
         </div>
+
+        <!-- ROW 2: SUBWINDOW ONLINE VISUAL INDICATOR -->
+        <div class="bg-slate-900/40 border border-slate-800 rounded-lg overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/10">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <i class="fa-solid fa-chart-column mr-1.5 text-indigo-400"></i>Panel Visual Indikator (Subwindow Online)
+                </span>
+                <div class="flex items-center gap-3 text-[10px] text-slate-400">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-emerald-600/30 border border-emerald-500 rounded-sm"></span> Buy %</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-rose-600/30 border border-rose-500 rounded-sm"></span> Sell %</span>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-950/80">
+                <div id="visualChart" class="flex flex-row overflow-x-auto min-h-[280px] border border-slate-800/80 rounded bg-slate-950 p-2 items-end gap-1 select-none">
+                    <div class="w-full text-center py-24 text-slate-500 text-xs">
+                        <i class="fa-solid fa-spinner animate-spin mr-2"></i>Menunggu data Twelve Data...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 3: HISTORY TABLE WITH ALERT SYSTEM (>70%) -->
+        <div class="bg-slate-900/40 border border-slate-800 rounded-lg overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/10">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    <i class="fa-solid fa-list-check mr-1.5 text-indigo-400"></i>Riwayat Rentang Blok & Sinyal Alert (&ge; 70%)
+                </span>
+                <span class="text-[10px] text-indigo-400 font-semibold bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-900/40">
+                    Sinyal &ge; 70% Disorot
+                </span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900/80 text-[10px] uppercase text-slate-400 font-bold border-b border-slate-800">
+                        <tr>
+                            <th class="p-3">Tanggal & Jam Mulai (Start)</th>
+                            <th class="p-3">Tanggal & Jam Selesai (End)</th>
+                            <th class="p-3 text-center">Bull Body (Buy %)</th>
+                            <th class="p-3 text-center">Bear Body (Sell %)</th>
+                            <th class="p-3 text-center">Wicks (Neutral)</th>
+                            <th class="p-3 text-center">Arah Sinyal</th>
+                            <th class="p-3 text-center">Sinyal Peringatan (&ge;70%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-slate-800/40">
+                        <tr>
+                            <td colspan="7" class="p-4 text-center text-slate-500">Silakan masukkan API Key dan perbarui data.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </main>
 
     <!-- FOOTER -->
-    <footer class="border-t border-slate-800 bg-slate-900/30 py-4 px-4 text-center text-xs text-slate-500">
+    <footer class="border-t border-slate-800 bg-slate-900/20 py-3 px-4 text-center text-[10px] text-slate-500">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-            <div>SBC Signal Dashboard &copy; 2026. Dioptimalkan untuk GBP/USD.</div>
+            <div>SBC Signal Dashboard &copy; 2026. Dioptimalkan tanpa VPS di GitHub Pages.</div>
             <div class="flex items-center gap-1.5">
-                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>Berjalan secara lokal tanpa database VPS (GitHub Pages)</span>
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Data Real-time dari Twelve Data</span>
             </div>
         </div>
     </footer>
 
-    <!-- LOGIC SYSTEM & SCRIPT -->
+    <!-- LOGIC SYSTEM & CALCULATIONS -->
     <script>
-        let cachedBars = []; // Menyimpan data historis lilin
+        let cachedBars = [];
         let updateInterval = null;
 
-        // Inisialisasi awal saat halaman dimuat
         window.addEventListener('load', () => {
-            // Memulihkan data konfigurasi yang tersimpan di LocalStorage
             loadConfig();
             toggleBarsInput();
             fetchData();
-
-            // Set up auto-refresh
             setupAutoRefresh();
         });
 
         function loadConfig() {
             if(localStorage.getItem('sbc_apiKey')) document.getElementById('apiKey').value = localStorage.getItem('sbc_apiKey');
             if(localStorage.getItem('sbc_symbol')) document.getElementById('symbol').value = localStorage.getItem('sbc_symbol');
-            if(localStorage.getItem('sbc_interval')) document.getElementById('interval').value = localStorage.getItem('sbc_interval');
+            if(localStorage.getItem('sbc_interval')) {
+                const interval = localStorage.getItem('sbc_interval');
+                document.getElementById('interval').value = interval;
+                setActiveTFButton(interval);
+            }
             if(localStorage.getItem('sbc_blockType')) document.getElementById('blockType').value = localStorage.getItem('sbc_blockType');
             if(localStorage.getItem('sbc_barsCount')) document.getElementById('barsCount').value = localStorage.getItem('sbc_barsCount');
             if(localStorage.getItem('sbc_showNeutral')) document.getElementById('showNeutral').checked = localStorage.getItem('sbc_showNeutral') === 'true';
@@ -310,25 +283,47 @@
             const wrapper = document.getElementById('barsCountWrapper');
             if (blockType === 'BLOCK_BARS') {
                 wrapper.classList.remove('hidden');
+                wrapper.classList.add('flex');
             } else {
                 wrapper.classList.add('hidden');
+                wrapper.classList.remove('flex');
             }
         }
 
-        // Setup timer untuk update berkala
+        // Fungsi khusus pengubah Timeframe (H1, H4, D1)
+        function setTF(tf) {
+            document.getElementById('interval').value = tf;
+            setActiveTFButton(tf);
+            fetchData();
+        }
+
+        function setActiveTFButton(tf) {
+            // Reset button styles
+            const buttons = ['1h', '4h', '1day'];
+            buttons.forEach(b => {
+                const btn = document.getElementById(`tf-${b}`);
+                if (btn) {
+                    btn.className = "px-2 py-0.5 rounded text-[10px] font-bold transition-all text-slate-400 hover:text-white";
+                }
+            });
+            // Apply active style
+            const activeBtn = document.getElementById(`tf-${tf}`);
+            if (activeBtn) {
+                activeBtn.className = "px-2 py-0.5 rounded text-[10px] font-bold transition-all bg-indigo-600 text-white";
+            }
+        }
+
         function setupAutoRefresh() {
             if(updateInterval) clearInterval(updateInterval);
-            
             updateInterval = setInterval(() => {
                 const auto = document.getElementById('autoRefresh').checked;
                 if(auto) {
-                    console.log("Melakukan auto-refresh otomatis...");
                     fetchData();
                 }
-            }, 60000); // Setiap 1 menit
+            }, 60000); // 1 menit sekali
         }
 
-        // Mengambil data dari Twelve Data API
+        // Fetch data historis lilin forex
         async function fetchData() {
             const apiKey = document.getElementById('apiKey').value.trim();
             const symbol = document.getElementById('symbol').value.trim();
@@ -337,7 +332,7 @@
             const banner = document.getElementById('statusBanner');
 
             if (!apiKey) {
-                showError("Gagal: API Key Twelve Data harus diisi!");
+                showError("Gagal: Tolong masukkan API Key Twelve Data terlebih dahulu.");
                 return;
             }
 
@@ -345,7 +340,6 @@
             syncIcon.classList.add('animate-spin');
             banner.classList.add('hidden');
 
-            // Kita meminta 250 bars agar cakupan pembagian block (Daily/Weekly) cukup panjang ke belakang
             const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${interval}&apikey=${apiKey}&outputsize=250`;
 
             try {
@@ -353,33 +347,33 @@
                 const data = await response.json();
 
                 if (data.status === 'error') {
-                    showError(`Kesalahan API: ${data.message}`);
+                    showError(`API Error: ${data.message}`);
                     syncIcon.classList.remove('animate-spin');
                     return;
                 }
 
                 if (!data.values || data.values.length === 0) {
-                    showError("Tidak ada data yang diterima dari API. Pastikan Simbol benar.");
+                    showError("Tidak ada data candlestick yang dikembalikan. Coba periksa Simbol instrumen.");
                     syncIcon.classList.remove('animate-spin');
                     return;
                 }
 
-                // Simpan data & urutkan dari TERTUA ke TERBARU
+                // Sorting data dari terlama ke terbaru
                 cachedBars = [...data.values].reverse();
 
-                // Update harga terakhir di panel atas
+                // Tampilkan harga real-time terakhir
                 const lastPrice = parseFloat(cachedBars[cachedBars.length - 1].close);
+                const formattedPrice = lastPrice.toFixed(5);
                 document.getElementById('topPrice').innerHTML = `
-                    <span>${lastPrice.toFixed(5)}</span>
-                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>${formattedPrice}</span>
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
                 `;
                 document.getElementById('topSymbol').innerText = symbol.toUpperCase();
 
-                // Render visual berdasarkan pengaturan user
                 renderDashboard();
 
             } catch (err) {
-                showError(`Kesalahan Koneksi Jaringan: ${err.message}`);
+                showError(`Error Jaringan: Gagal menghubungi API server (${err.message})`);
             } finally {
                 syncIcon.classList.remove('animate-spin');
             }
@@ -392,7 +386,7 @@
             banner.classList.remove('hidden');
         }
 
-        // Parsing waktu "YYYY-MM-DD HH:MM:SS" ke struktur Tanggal Lokal aman lintas browser
+        // Parsing tanggal aman lintas platform/browser
         function parseCustomDate(dateStr) {
             const parts = dateStr.split(' ');
             const dateParts = parts[0].split('-');
@@ -407,7 +401,7 @@
             );
         }
 
-        // Menghitung kekuatan segmentasi lilin sesuai algoritma kekuatan.mq4
+        // Algoritma menghitung kekuatan struktur candle (sesuai kekuatan.mq4)
         function calculatePercentages(bars, startIdx, endIdx, showNeutral) {
             let total_buy = 0;
             let total_sell = 0;
@@ -427,7 +421,6 @@
                 if (c < o) bearCount++;
 
                 if (showNeutral) {
-                    // Mode 3 Row: Bull Body = Buy, Bear Body = Sell, Wicks = Neutral
                     const body = Math.abs(c - o);
                     let upper_wick = 0;
                     let lower_wick = 0;
@@ -448,7 +441,6 @@
                     }
                     total_neutral += wicks;
                 } else {
-                    // Mode 2 Row: Perbandingan mutlak badan lilin hijau vs merah
                     if (c > o) {
                         total_buy += (c - o);
                     } else if (c < o) {
@@ -478,7 +470,7 @@
             };
         }
 
-        // Membagi seluruh rentang candle menjadi segmentasi Block (MQL4 Mirroring)
+        // Segmentasi / Split bars menjadi rentang blok MQL4
         function renderDashboard() {
             if (cachedBars.length === 0) return;
 
@@ -504,7 +496,6 @@
                         is_new_block = true;
                     }
                 } else if (blockType === 'BLOCK_WEEKLY') {
-                    // Cek jika perpindahan dari akhir pekan atau hari lompat mundur (pembatas minggu)
                     const prevTime = prevDate.getTime();
                     const currTime = currDate.getTime();
                     if (currDate.getDay() < prevDate.getDay() || (currTime - prevTime) > 172800000) {
@@ -527,7 +518,6 @@
                 }
             }
 
-            // Push sisa block terakhir (yang sedang berjalan/developing)
             if (current_start < cachedBars.length) {
                 blocks.push({
                     start_bar: current_start,
@@ -537,80 +527,90 @@
                 });
             }
 
-            // Hitung persentase tiap blok hasil split
-            const calculatedBlocks = blocks.map((b, index) => {
+            const calculatedBlocks = blocks.map((b, idx) => {
                 const results = calculatePercentages(cachedBars, b.start_bar, b.end_bar, showNeutral);
                 return {
                     ...b,
                     ...results,
-                    id: index
+                    id: idx
                 };
             });
 
-            // Jalankan UI render
+            // Jalankan Render Komponen
             drawVisualGrid(calculatedBlocks, showNeutral);
             updateSummaryWidget(calculatedBlocks, showNeutral);
             drawHistoryTable(calculatedBlocks, showNeutral);
         }
 
-        // Menggambar Grid Grafik Subwindow Vertikal mirip MT4
+        // Render Grafik Subwindow Blok
         function drawVisualGrid(blockData, showNeutral) {
             const chartContainer = document.getElementById('visualChart');
             chartContainer.innerHTML = '';
 
             blockData.forEach((block, index) => {
                 const col = document.createElement('div');
-                col.className = "flex-shrink-0 w-[140px] md:w-[160px] border-r border-slate-800 flex flex-col justify-between h-full relative group hover:bg-slate-900/40 transition-colors";
+                col.className = "flex-shrink-0 w-[140px] border-r border-slate-800/80 flex flex-col justify-between h-full relative group hover:bg-slate-900/30 transition-colors";
 
-                // Container Bar Visual
                 const barContainer = document.createElement('div');
-                barContainer.className = "relative w-full flex-grow flex flex-col justify-end h-[240px] bg-slate-950 px-2 pb-1 pt-4 gap-0.5";
+                barContainer.className = "relative w-full flex-grow flex flex-col justify-end h-[220px] bg-slate-950 px-1.5 pb-1 pt-4 gap-0.5";
 
-                // Sell Segment (Top)
+                // Highlighting block visual jika salah satu arah >= 70%
+                const isStrongBuy = block.buy >= 70;
+                const isStrongSell = block.sell >= 70;
+
+                // Border highlight visual jika ada sinyal ekstrim
+                if (isStrongBuy) {
+                    barContainer.classList.add('ring-1', 'ring-emerald-500/30', 'bg-emerald-950/5');
+                } else if (isStrongSell) {
+                    barContainer.classList.add('ring-1', 'ring-rose-500/30', 'bg-rose-950/5');
+                }
+
+                // Sell Segment
                 const sellDiv = document.createElement('div');
                 sellDiv.style.height = `${block.sell}%`;
-                sellDiv.className = "bg-rose-500/20 hover:bg-rose-500/35 border-t border-b border-rose-500/30 flex items-center justify-center text-rose-400 font-extrabold text-[10px] select-none relative transition-all duration-300 rounded-sm";
+                const sellClass = isStrongSell 
+                    ? "bg-rose-500/40 hover:bg-rose-500/50 text-rose-300 border border-rose-500/60 font-extrabold text-[10px]" 
+                    : "bg-rose-500/20 hover:bg-rose-500/30 text-rose-400/80 border border-rose-500/20 font-bold text-[9px]";
+                sellDiv.className = `${sellClass} flex items-center justify-center select-none relative transition-all duration-300 rounded-sm`;
                 sellDiv.innerHTML = `<span>SELL ${block.sell}%</span>`;
 
-                // Neutral Segment (Jika dicentang)
+                // Neutral Segment
                 let neutralDiv = null;
                 if (showNeutral) {
                     neutralDiv = document.createElement('div');
                     neutralDiv.style.height = `${block.neutral}%`;
-                    neutralDiv.className = "bg-slate-500/15 hover:bg-slate-500/25 border-t border-b border-slate-500/20 flex items-center justify-center text-slate-400 font-extrabold text-[10px] select-none relative transition-all duration-300 rounded-sm";
+                    neutralDiv.className = "bg-slate-500/15 hover:bg-slate-500/25 border border-slate-500/10 flex items-center justify-center text-slate-400 font-bold text-[9px] select-none relative transition-all duration-300 rounded-sm";
                     neutralDiv.innerHTML = `<span>NEUT ${block.neutral}%</span>`;
                 }
 
-                // Buy Segment (Bottom)
+                // Buy Segment
                 const buyDiv = document.createElement('div');
                 buyDiv.style.height = `${block.buy}%`;
-                buyDiv.className = "bg-emerald-500/20 hover:bg-emerald-500/35 border-t border-b border-emerald-500/30 flex items-center justify-center text-emerald-400 font-extrabold text-[10px] select-none relative transition-all duration-300 rounded-sm";
+                const buyClass = isStrongBuy 
+                    ? "bg-emerald-500/40 hover:bg-emerald-500/50 text-emerald-300 border border-emerald-500/60 font-extrabold text-[10px]" 
+                    : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400/80 border border-emerald-500/20 font-bold text-[9px]";
+                buyDiv.className = `${buyClass} flex items-center justify-center select-none relative transition-all duration-300 rounded-sm`;
                 buyDiv.innerHTML = `<span>BUY ${block.buy}%</span>`;
 
-                // Susun vertical stacked layout
                 barContainer.appendChild(sellDiv);
-                if (showNeutral && neutralDiv) {
-                    barContainer.appendChild(neutralDiv);
-                }
+                if (showNeutral && neutralDiv) barContainer.appendChild(neutralDiv);
                 barContainer.appendChild(buyDiv);
 
-                // Label Rentang Tanggal di bawah bar
-                const timeLabel = document.createElement('div');
-                timeLabel.className = "p-2 bg-slate-900 text-[9px] text-slate-400 border-t border-slate-800 text-center truncate select-none";
-                
-                // Format label visual tanggal
+                // Label format jam spesifik
                 const startDate = parseCustomDate(block.startDate);
                 const formatLabel = startDate.toLocaleDateString('id-ID', {day: 'numeric', month: 'short'}) + ' ' + startDate.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+                
+                const timeLabel = document.createElement('div');
+                timeLabel.className = "p-1.5 bg-slate-900/60 text-[9px] text-slate-400 border-t border-slate-800 text-center truncate select-none";
                 timeLabel.innerText = formatLabel;
-                timeLabel.title = `Awal: ${block.startDate}\nAkhir: ${block.endDate}`;
+                timeLabel.title = `Dari: ${block.startDate}\nSampai: ${block.endDate}`;
 
-                // Indikator Penanda bahwa blok ini adalah block live yang aktif berjalan saat ini (paling baru)
                 if (index === blockData.length - 1) {
-                    col.classList.add('ring-1', 'ring-indigo-500/50', 'bg-indigo-950/10');
-                    const liveBadge = document.createElement('span');
-                    liveBadge.className = "absolute top-1 right-1 px-1 bg-indigo-600 text-[8px] text-white font-bold rounded-sm uppercase tracking-wide";
-                    liveBadge.innerText = "Running";
-                    col.appendChild(liveBadge);
+                    col.classList.add('ring-1', 'ring-indigo-500/40', 'bg-indigo-950/5');
+                    const badge = document.createElement('span');
+                    badge.className = "absolute top-1 right-1 px-1 bg-indigo-600 text-[8px] text-white font-bold rounded uppercase tracking-wide";
+                    badge.innerText = "Running";
+                    col.appendChild(badge);
                 }
 
                 col.appendChild(barContainer);
@@ -618,25 +618,21 @@
                 chartContainer.appendChild(col);
             });
 
-            // Otomatis geser ke kanan agar block terbaru langsung tampil terdepan
+            // Auto-scroll ke blok paling baru
             setTimeout(() => {
                 chartContainer.scrollLeft = chartContainer.scrollWidth;
             }, 100);
         }
 
-        // Update bagian widget status signal ringkasan saat ini
+        // Update Gauge Utama & Summary atas
         function updateSummaryWidget(blockData, showNeutral) {
             if (blockData.length === 0) return;
-
-            // Kita ambil block paling baru yang sedang berjalan (aktif)
             const activeBlock = blockData[blockData.length - 1];
 
-            // Tampilkan Statistik lilin pembentuk
             document.getElementById('statsBullCount').innerText = activeBlock.bullCount;
             document.getElementById('statsBearCount').innerText = activeBlock.bearCount;
             document.getElementById('statsTotalBars').innerText = `${activeBlock.totalBars} Bar`;
 
-            // Atur visual gauge
             const sellBar = document.getElementById('gaugeSell');
             const neutBar = document.getElementById('gaugeNeutral');
             const buyBar = document.getElementById('gaugeBuy');
@@ -650,72 +646,95 @@
                 neutBar.classList.remove('hidden');
                 document.getElementById('lblGaugeNeut').classList.remove('hidden');
                 neutBar.style.width = `${activeBlock.neutral}%`;
-                document.getElementById('lblGaugeNeut').innerText = `NEUTRAL ${activeBlock.neutral}%`;
+                document.getElementById('lblGaugeNeut').innerText = `NEUT ${activeBlock.neutral}%`;
             } else {
                 neutBar.classList.add('hidden');
                 document.getElementById('lblGaugeNeut').classList.add('hidden');
                 neutBar.style.width = '0%';
             }
 
-            // Tentukan arah dominasi signal
             const signalDir = document.getElementById('signalDirection');
             const signalStr = document.getElementById('signalStrength');
 
             if (activeBlock.buy > activeBlock.sell && activeBlock.buy > activeBlock.neutral) {
-                signalDir.innerText = "BULLISH ACCUMULATION (BUY)";
-                signalDir.className = "text-xl font-black text-emerald-400";
+                signalDir.innerText = "BULLISH ACCUMULATION";
+                signalDir.className = "text-md font-bold text-emerald-400";
                 signalStr.innerText = `(Kekuatan Buy ${activeBlock.buy}%)`;
             } else if (activeBlock.sell > activeBlock.buy && activeBlock.sell > activeBlock.neutral) {
-                signalDir.innerText = "BEARISH ACCUMULATION (SELL)";
-                signalDir.className = "text-xl font-black text-rose-400";
+                signalDir.innerText = "BEARISH ACCUMULATION";
+                signalDir.className = "text-md font-bold text-rose-400";
                 signalStr.innerText = `(Kekuatan Sell ${activeBlock.sell}%)`;
             } else {
-                signalDir.innerText = "RANGING / SIDEWAYS (NEUTRAL)";
-                signalDir.className = "text-xl font-black text-slate-400";
+                signalDir.innerText = "SIDEWAYS / NEUTRAL";
+                signalDir.className = "text-md font-bold text-slate-400";
                 signalStr.innerText = `(Kekuatan Ragu ${activeBlock.neutral}%)`;
             }
         }
 
-        // Membuat data tabel riwayat block historis di bawah panel utama
+        // Menggambar data tabel riwayat dengan Detil Jam & Highlight >= 70%
         function drawHistoryTable(blockData, showNeutral) {
             const tableBody = document.getElementById('historyTableBody');
             tableBody.innerHTML = '';
 
-            // Render baris data dari yang TERBARU di atas
             const sortedData = [...blockData].reverse();
 
             sortedData.forEach((block, index) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-900/40 border-b border-slate-800/40 transition-colors";
+                tr.className = "hover:bg-slate-900/30 border-b border-slate-800/40 transition-colors";
 
-                // Format Waktu Cantik
                 const startD = parseCustomDate(block.startDate);
                 const endD = parseCustomDate(block.endDate);
-                
-                const timeStr = `
-                    <div class="font-medium text-slate-100">${startD.toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</div>
-                    <div class="text-[10px] text-slate-500 mt-0.5">Rentang: ${startD.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})} - ${endD.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</div>
+
+                // Pembacaan Tanggal & Jam Detil
+                const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+                const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+
+                const startText = `
+                    <div class="font-semibold text-slate-200">${startD.toLocaleDateString('id-ID', dateOptions)}</div>
+                    <div class="text-[10px] text-indigo-400/80 font-mono mt-0.5"><i class="fa-regular fa-clock mr-1"></i>${startD.toLocaleTimeString('id-ID', timeOptions)}</div>
                 `;
 
-                // Signal Badge
-                let signalBadge = '';
+                const endText = `
+                    <div class="font-semibold text-slate-200">${endD.toLocaleDateString('id-ID', dateOptions)}</div>
+                    <div class="text-[10px] text-indigo-400/80 font-mono mt-0.5"><i class="fa-regular fa-clock mr-1"></i>${endD.toLocaleTimeString('id-ID', timeOptions)}</div>
+                `;
+
+                // Signal Direction Badge
+                let directionBadge = '';
                 if (block.buy > block.sell && block.buy > block.neutral) {
-                    signalBadge = `<span class="px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded text-[10px] font-bold">BUY ${block.buy}%</span>`;
+                    directionBadge = `<span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold text-[10px]">BUY</span>`;
                 } else if (block.sell > block.buy && block.sell > block.neutral) {
-                    signalBadge = `<span class="px-2 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold">SELL ${block.sell}%</span>`;
+                    directionBadge = `<span class="px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded font-bold text-[10px]">SELL</span>`;
                 } else {
-                    signalBadge = `<span class="px-2 py-1 bg-slate-500/10 text-slate-400 border border-slate-500/30 rounded text-[10px] font-bold">NEUTRAL ${block.neutral}%</span>`;
+                    directionBadge = `<span class="px-2 py-0.5 bg-slate-500/10 text-slate-400 border border-slate-500/20 rounded font-bold text-[10px]">NEUTRAL</span>`;
                 }
 
-                // Append status "RUNNING" jika index 0 (yaitu data yang sedang aktif diproduksi sekarang)
-                const labelRun = index === 0 ? '<span class="ml-2 text-[9px] px-1 bg-indigo-600 text-white font-bold rounded">LIVE</span>' : '';
+                // Logika Deteksi Alert >= 70%
+                let alertBadge = '<span class="text-slate-600">-</span>';
+                const hasStrongBuyAlert = block.buy >= 70;
+                const hasStrongSellAlert = block.sell >= 70;
+
+                if (hasStrongBuyAlert) {
+                    alertBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-full text-[10px] font-black animate-pulse shadow-lg shadow-emerald-950/80"><i class="fa-solid fa-circle-exclamation"></i> BUY ALERT ${block.buy}%</span>`;
+                    // Sorot Baris Tabel Dengan Warna Hijau Menyala Tipis
+                    tr.classList.add('bg-emerald-950/20', 'border-l-4', 'border-emerald-500');
+                } else if (hasStrongSellAlert) {
+                    alertBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-600 text-white rounded-full text-[10px] font-black animate-pulse shadow-lg shadow-rose-950/80"><i class="fa-solid fa-circle-exclamation"></i> SELL ALERT ${block.sell}%</span>`;
+                    // Sorot Baris Tabel Dengan Warna Merah Menyala Tipis
+                    tr.classList.add('bg-rose-950/20', 'border-l-4', 'border-rose-500');
+                }
+
+                // Tanda untuk blok yang masih berjalan (LIVE)
+                const liveLabel = index === 0 ? '<span class="ml-1 text-[8px] px-1 bg-indigo-600 text-white font-bold rounded">RUNNING</span>' : '';
 
                 tr.innerHTML = `
-                    <td class="p-3">${timeStr}</td>
-                    <td class="p-3 text-center text-emerald-400 font-semibold">${block.buy}%</td>
-                    <td class="p-3 text-center text-rose-400 font-semibold">${block.sell}%</td>
-                    <td class="p-3 text-center text-slate-400">${showNeutral ? block.neutral + '%' : '-'}</td>
-                    <td class="p-3 text-center">${signalBadge}${labelRun}</td>
+                    <td class="p-3">${startText}</td>
+                    <td class="p-3">${endText}</td>
+                    <td class="p-3 text-center text-emerald-400 font-bold">${block.buy}%</td>
+                    <td class="p-3 text-center text-rose-400 font-bold">${block.sell}%</td>
+                    <td class="p-3 text-center text-slate-500">${showNeutral ? block.neutral + '%' : '-'}</td>
+                    <td class="p-3 text-center">${directionBadge}${liveLabel}</td>
+                    <td class="p-3 text-center">${alertBadge}</td>
                 `;
 
                 tableBody.appendChild(tr);
