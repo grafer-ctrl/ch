@@ -11,22 +11,24 @@
 </head>
 <body class="bg-[#090a0f] text-slate-100 min-h-screen font-sans flex flex-col justify-between antialiased">
 
-    <!-- CONTAINER UTAMA (RESPONSIF TELEPON & DESKTOP) -->
+    <!-- CONTAINER UTAMA (POTRAIT SESUAI SKETSA) -->
     <main class="max-w-md w-full mx-auto px-4 py-6 space-y-6 flex-grow">
 
         <!-- TITLE: prosentase GU -->
         <div class="text-center">
             <h1 class="text-2xl font-extrabold tracking-widest text-[#00f2fe] lowercase">prosentase GU</h1>
-            <p class="text-[10px] text-slate-500 tracking-wider uppercase mt-0.5">Finnhub Engine Analyzer</p>
+            <p class="text-[10px] text-slate-500 tracking-wider uppercase mt-0.5 font-mono">Twelve Data Engine</p>
         </div>
 
-        <!-- TIMEFRAME SELECTOR (H1, H4, D1) -->
+        <!-- TIMEFRAME SELECTOR (H1, H4, D1 SINKRON DENGAN TWELVE DATA) -->
         <div class="flex justify-center">
             <div class="inline-flex rounded-lg bg-[#11131c] p-1 border border-slate-800">
-                <button onclick="changeTimeframe('H1')" id="tf-H1" class="px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all bg-indigo-600 text-white shadow-lg">H1</button>
-                <button onclick="changeTimeframe('H4')" id="tf-H4" class="px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all text-slate-400 hover:text-white">H4</button>
-                <button onclick="changeTimeframe('D1')" id="tf-D1" class="px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all text-slate-400 hover:text-white">D1</button>
+                <button onclick="changeTimeframe('1h')" id="tf-1h" class="px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all bg-indigo-600 text-white shadow-lg">H1</button>
+                <button onclick="changeTimeframe('4h')" id="tf-4h" class="px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all text-slate-400 hover:text-white">H4</button>
+                <button onclick="changeTimeframe('1day')" id="tf-1day" class="px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all text-slate-400 hover:text-white">D1</button>
             </div>
+            <!-- Hidden input to store TF state -->
+            <input type="hidden" id="interval" value="1h">
         </div>
 
         <!-- DATE LABEL: tgl hari ini -->
@@ -34,13 +36,13 @@
             <span class="text-xs font-semibold text-slate-400" id="currentDate">Sabtu, 13 Juni 2026</span>
         </div>
 
-        <!-- BANNER NOTIFIKASI ERROR / LOADING -->
+        <!-- BANNER NOTIFIKASI ERROR / RATE LIMIT -->
         <div id="statusBanner" class="hidden p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-lg flex items-center gap-2">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <span id="statusText">Terjadi kesalahan pada data feed.</span>
         </div>
 
-        <!-- PROSENTASE BLOK KEKUATAN (4 BARS SESUAI SKETSA) -->
+        <!-- PROSENTASE BLOK KEKUATAN (4 BARS TOTAL SESUAI SKETSA) -->
         <div class="space-y-4">
             
             <!-- BAR 1: PROSENTASE HARI INI BERJALAN -->
@@ -66,7 +68,7 @@
                     <i class="fa-solid fa-clock-rotate-left"></i> prosentase 3 hari yang lalu
                 </div>
 
-                <!-- BAR 2: 1 HARI LALU -->
+                <!-- BAR 2: 1 HARI LALU / 1 PERIODE LALU -->
                 <div class="bg-[#11131c]/70 border border-slate-800/80 p-3 rounded-xl ml-1.5">
                     <div class="flex justify-between items-center mb-1.5">
                         <span id="nameBlock1" class="text-[10px] font-bold text-slate-400 uppercase">1 Hari Lalu</span>
@@ -78,7 +80,7 @@
                     </div>
                 </div>
 
-                <!-- BAR 3: 2 HARI LALU -->
+                <!-- BAR 3: 2 HARI LALU / 2 PERIODE LALU -->
                 <div class="bg-[#11131c]/70 border border-slate-800/80 p-3 rounded-xl ml-1.5">
                     <div class="flex justify-between items-center mb-1.5">
                         <span id="nameBlock2" class="text-[10px] font-bold text-slate-400 uppercase">2 Hari Lalu</span>
@@ -90,7 +92,7 @@
                     </div>
                 </div>
 
-                <!-- BAR 4: 3 HARI LALU -->
+                <!-- BAR 4: 3 HARI LALU / 3 PERIODE LALU -->
                 <div class="bg-[#11131c]/70 border border-slate-800/80 p-3 rounded-xl ml-1.5">
                     <div class="flex justify-between items-center mb-1.5">
                         <span id="nameBlock3" class="text-[10px] font-bold text-slate-400 uppercase">3 Hari Lalu</span>
@@ -108,11 +110,11 @@
         <!-- CHARTLINE GBP/USD (SVG ENGINE) -->
         <div class="bg-[#11131c] border border-slate-800/80 p-4 rounded-xl shadow-lg space-y-2">
             <div class="flex justify-between items-center">
-                <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">CHARTLINE GBP/USD</span>
-                <span id="chartCurrentPrice" class="text-xs font-bold text-emerald-400">-.-----</span>
+                <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase font-mono">CHARTLINE GBP/USD</span>
+                <span id="chartCurrentPrice" class="text-xs font-bold text-emerald-400 font-mono">-.-----</span>
             </div>
             
-            <!-- Price Chart Render Area -->
+            <!-- Price Chart Area -->
             <div class="relative w-full h-[140px] bg-slate-950 rounded overflow-hidden border border-slate-900">
                 <svg id="priceChart" class="w-full h-full"></svg>
             </div>
@@ -120,29 +122,37 @@
 
     </main>
 
-    <!-- FOOTER SETTINGS (MINIMALIS) -->
+    <!-- FOOTER SETTINGS (MINIMALIS & REAKTIF) -->
     <footer class="border-t border-slate-900 bg-[#0c0d14] py-3 text-center text-[10px] text-slate-600 px-4">
-        <div class="max-w-md mx-auto flex justify-between items-center">
-            <span>Finnhub Connection: <strong class="text-emerald-500" id="apiStatus">Online</strong></span>
+        <div class="max-w-md mx-auto flex justify-between items-center font-mono">
+            <span>Connection: <strong class="text-[#00f2fe]" id="apiStatus">Waiting</strong></span>
+            <!-- GMT offset option to match exactly with MT4 broker (e.g. IC Markets / XM use GMT+3) -->
             <div class="flex items-center gap-1.5">
-                <button onclick="fetchData()" class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold hover:bg-slate-700 transition-colors">
-                    <i class="fa-solid fa-sync mr-1"></i> Sync
+                <span class="text-slate-500">Offset:</span>
+                <select id="gmtOffset" class="bg-[#11131c] text-slate-300 border border-slate-800 rounded p-0.5 outline-none text-[9px] font-bold" onchange="renderDashboard()">
+                    <option value="0">GMT+0</option>
+                    <option value="2">GMT+2</option>
+                    <option value="3" selected>GMT+3</option>
+                    <option value="7">GMT+7</option>
+                </select>
+                <button onclick="fetchData()" class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded hover:bg-slate-700 transition-colors">
+                    <i class="fa-solid fa-sync"></i>
                 </button>
             </div>
         </div>
     </footer>
 
-    <!-- LOGIC SYSTEM & API SCRIPT -->
+    <!-- LOGIC SYSTEM & TWELVE DATA API INTEGRATION -->
     <script>
-        const API_KEY = "d8mkdr1r01qkisob43u0d8mkdr1r01qkisob43ug";
-        const SYMBOL = "OANDA:GBP_USD"; 
-        let activeTimeframe = "H1"; 
+        const API_KEY = "fb747c5e9f9d4da39b7b024548760281";
+        const SYMBOL = "GBP/USD"; 
         let cachedRawCandles = [];
+        let autoTimer = null;
 
         window.addEventListener('load', () => {
-            // Pasang Tanggal hari ini dalam format Indonesia
             document.getElementById('currentDate').innerText = getFormattedDate();
             fetchData();
+            setupTimer();
         });
 
         function getFormattedDate() {
@@ -152,103 +162,113 @@
             return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
         }
 
+        // Memperbaiki bug transisi timeframe navigasi yang sebelumnya tidak merespons perubahan ID tombol
         function changeTimeframe(tf) {
-            activeTimeframe = tf;
-            ['H1', 'H4', 'D1'].forEach(item => {
+            document.getElementById('interval').value = tf;
+            ['1h', '4h', '1day'].forEach(item => {
                 const btn = document.getElementById(`tf-${item}`);
-                if (item === tf) {
-                    btn.className = "px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all bg-indigo-600 text-white shadow-lg";
-                } else {
-                    btn.className = "px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all text-slate-400 hover:text-white";
+                if (btn) {
+                    if (item === tf) {
+                        btn.className = "px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all bg-indigo-600 text-white shadow-lg";
+                    } else {
+                        btn.className = "px-5 py-1.5 rounded-md text-xs font-bold tracking-wide transition-all text-slate-400 hover:text-white";
+                    }
                 }
             });
             fetchData();
         }
 
+        function setupTimer() {
+            if (autoTimer) clearInterval(autoTimer);
+            autoTimer = setInterval(() => {
+                fetchData();
+            }, 60000); // Polling data Twelve Data secara berkala setiap 60 detik
+        }
+
         async function fetchData() {
+            const interval = document.getElementById('interval').value;
             const banner = document.getElementById('statusBanner');
             const apiStatus = document.getElementById('apiStatus');
+            
             banner.classList.add('hidden');
             apiStatus.innerText = "Syncing...";
             apiStatus.className = "text-amber-500";
 
-            // Tentukan range pengambilan data historis (ambil 20 hari ke belakang agar block daily & weekly cukup melimpah)
-            const toTimestamp = Math.floor(Date.now() / 1000);
-            const fromTimestamp = toTimestamp - (20 * 24 * 60 * 60);
-
-            // Jika TF adalah D1, gunakan resolusi 'D'. H1/H4 menggunakan resolusi '60'
-            const resolution = activeTimeframe === "D1" ? "D" : "60";
-            const url = `https://finnhub.io/api/v1/forex/candle?symbol=${SYMBOL}&resolution=${resolution}&from=${fromTimestamp}&to=${toTimestamp}&token=${API_KEY}`;
+            // Mengambil 200 data lilin historis
+            const url = `https://api.twelvedata.com/time_series?symbol=${SYMBOL}&interval=${interval}&apikey=${API_KEY}&outputsize=200`;
 
             try {
                 const response = await fetch(url);
                 const data = await response.json();
 
-                if (data.s === 'error' || !data.t) {
-                    showError("Gagal sinkronisasi API. Silakan periksa koneksi atau token.");
+                // Deteksi batasan kuota akses gratis pada Twelve Data (Limit 8x per menit)
+                if (data.status === 'error' || !data.values || data.values.length === 0) {
+                    let errorMsg = data.message || "Gagal memuat data dari Twelve Data.";
+                    if (data.code === 429) {
+                        errorMsg = "Twelve Data Speed Limit (Maksimal 8 permintaan/menit). Harap tunggu sejenak sebelum menyegarkan kembali.";
+                    }
+                    showError(errorMsg);
                     apiStatus.innerText = "Offline";
                     apiStatus.className = "text-rose-500";
                     return;
                 }
 
-                // Parse struktur Finnhub candle ke struktur array JavaScript
-                let candles = [];
-                for (let i = 0; i < data.t.length; i++) {
-                    candles.push({
-                        open: data.o[i],
-                        high: data.h[i],
-                        low: data.l[i],
-                        close: data.c[i],
-                        time: data.t[i]
-                    });
-                }
+                // Urutkan data secara kronologis dari yang terlama ke yang terbaru
+                cachedRawCandles = [...data.values].reverse();
 
-                // Jika H4 dipilih, rangkai (aggregate) data H1 menjadi lilin H4
-                if (activeTimeframe === "H4") {
-                    candles = aggregateH1toH4(candles);
-                }
+                apiStatus.innerText = "TwelveData";
+                apiStatus.className = "text-[#00f2fe]";
 
-                cachedRawCandles = candles;
-                apiStatus.innerText = "Online";
-                apiStatus.className = "text-emerald-500";
-
-                // Update harga bid di chartline
-                const lastPrice = candles[candles.length - 1].close;
-                document.getElementById('chartCurrentPrice').innerText = lastPrice.toFixed(5);
+                // Tampilkan harga Bid berjalan terakhir ke atas area chartline
+                const lastClosePrice = parseFloat(cachedRawCandles[cachedRawCandles.length - 1].close);
+                document.getElementById('chartCurrentPrice').innerText = lastClosePrice.toFixed(5);
 
                 renderDashboard();
 
             } catch (err) {
-                showError(`Error Jaringan: ${err.message}`);
+                showError(`Error Jaringan: Gagal menghubungi server Twelve Data (${err.message})`);
                 apiStatus.innerText = "Error";
                 apiStatus.className = "text-rose-500";
             }
         }
 
-        function aggregateH1toH4(h1Candles) {
-            const h4Candles = [];
-            // Rangkai setiap 4 candle H1 menjadi 1 candle H4
-            for (let i = 0; i < h1Candles.length; i += 4) {
-                const group = h1Candles.slice(i, i + 4);
-                if (group.length === 0) continue;
-
-                const open = group[0].open;
-                const close = group[group.length - 1].close;
-                const high = Math.max(...group.map(c => c.high));
-                const low = Math.min(...group.map(c => c.low));
-                const time = group[0].time;
-
-                h4Candles.push({ open, high, low, close, time });
+        // Parsing waktu bar dan mengalibrasikannya ke GMT Offset pilihan Anda
+        function parseCustomDate(dateStr, offsetHours) {
+            const parts = dateStr.split(' ');
+            const dateParts = parts[0].split('-');
+            const timeParts = parts[1] ? parts[1].split(':') : [0, 0, 0];
+            const d = new Date(
+                parseInt(dateParts[0]),
+                parseInt(dateParts[1]) - 1,
+                parseInt(dateParts[2]),
+                parseInt(timeParts[0]),
+                parseInt(timeParts[1]),
+                parseInt(timeParts[2] || 0)
+            );
+            if (offsetHours !== 0) {
+                d.setHours(d.getHours() + offsetHours);
             }
-            return h4Candles;
+            return d;
+        }
+
+        // Kalkulasi nomor pekan ISO untuk menjaga keakuratan blok mingguan pada TF D1
+        function getWeekNumber(d) {
+            const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            const dayNum = date.getUTCDay() || 7;
+            date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+            return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
         }
 
         function renderDashboard() {
             if (cachedRawCandles.length === 0) return;
 
-            // Jika timeframe D1, bagi blok berdasarkan Mingguan (Weekly)
+            const interval = document.getElementById('interval').value;
+            const gmtOffset = parseInt(document.getElementById('gmtOffset').value) || 0;
+
+            // Jika TF adalah D1 (1day), bagi blok berdasarkan Mingguan (Weekly)
             // Jika H1 / H4, bagi blok berdasarkan Harian (Daily)
-            const blockType = activeTimeframe === "D1" ? "BLOCK_WEEKLY" : "BLOCK_DAILY";
+            const blockType = interval === "1day" ? "BLOCK_WEEKLY" : "BLOCK_DAILY";
 
             const blocks = [];
             let current_start = 0;
@@ -258,9 +278,8 @@
                 const prevBar = cachedRawCandles[i - 1];
                 const currBar = cachedRawCandles[i];
 
-                // Kalibrasi server GMT+3 untuk mematangkan transisi separator block harian
-                const prevDate = parseWithOffset(prevBar.time, 3);
-                const currDate = parseWithOffset(currBar.time, 3);
+                const prevDate = parseCustomDate(prevBar.datetime, gmtOffset);
+                const currDate = parseCustomDate(currBar.datetime, gmtOffset);
 
                 if (blockType === "BLOCK_DAILY") {
                     if (prevDate.getDate() !== currDate.getDate() ||
@@ -269,9 +288,8 @@
                         isNewBlock = true;
                     }
                 } else if (blockType === "BLOCK_WEEKLY") {
-                    const prevTime = prevDate.getTime();
-                    const currTime = currDate.getTime();
-                    if (currDate.getDay() < prevDate.getDay() || (currTime - prevTime) > 172800000) {
+                    if (getWeekNumber(prevDate) !== getWeekNumber(currDate) || 
+                        prevDate.getFullYear() !== currDate.getFullYear()) {
                         isNewBlock = true;
                     }
                 }
@@ -285,7 +303,7 @@
                 }
             }
 
-            // Sisa blok terakhir yang sedang aktif berjalan (Live)
+            // Sisa blok paling baru yang sedang berjalan saat ini
             if (current_start < cachedRawCandles.length) {
                 blocks.push({
                     start_bar: current_start,
@@ -293,10 +311,10 @@
                 });
             }
 
-            // Urutkan blok dari yang terbaru ke terlama agar bar atas selalu merupakan blok live yang berjalan
+            // Urutkan blok dari yang terbaru ke terlama agar bar paling atas selalu menampilkan bar aktif berjalan
             const sortedBlocks = blocks.reverse();
 
-            // Render ke-4 bar horizontal kekuatan buy & sell
+            // Render ke-4 progress bar kekuatan buy & sell sesuai sketsa
             for (let i = 0; i < 4; i++) {
                 const block = sortedBlocks[i];
                 const barBuy = document.getElementById(`bar${i}Buy`);
@@ -310,31 +328,24 @@
                     barSell.style.width = `${stats.sell}%`;
                     label.innerText = `BUY ${stats.buy}% | ${stats.sell}% SELL`;
 
-                    // Update nama label dinamis di samping visual progress bar
+                    // Update label tanggal dinamis di baris historis
                     if (i > 0) {
                         const nameLabel = document.getElementById(`nameBlock${i}`);
-                        const dateText = new Date(cachedRawCandles[block.start_bar].time * 1000);
+                        const dateText = parseCustomDate(cachedRawCandles[block.start_bar].datetime, gmtOffset);
                         const formatDay = dateText.toLocaleDateString('id-ID', {day: 'numeric', month: 'short'});
-                        nameLabel.innerText = `${i} Periode Lalu (${formatDay})`;
+                        
+                        let unitName = interval === "1day" ? "Minggu" : "Hari";
+                        nameLabel.innerText = `${i} ${unitName} Lalu (${formatDay})`;
                     }
                 } else {
-                    // Sembunyikan atau set default jika data historis belum mencakup 4 blok penuh
                     barBuy.style.width = `50%`;
                     barSell.style.width = `50%`;
                     label.innerText = `BUY 50% | 50% SELL`;
                 }
             }
 
-            // Gambar Grafik Linechart GBP/USD di panel paling bawah
+            // Gambar ulang Linechart GBP/USD
             drawLineChart(cachedRawCandles);
-        }
-
-        function parseWithOffset(unixSec, offsetHours) {
-            const d = new Date(unixSec * 1000);
-            if (offsetHours !== 0) {
-                d.setHours(d.getHours() + offsetHours);
-            }
-            return d;
         }
 
         function calculatePercentages(bars, startIdx, endIdx) {
@@ -343,13 +354,13 @@
 
             for (let i = startIdx; i <= endIdx; i++) {
                 const bar = bars[i];
-                const o = bar.open;
-                const c = bar.close;
+                const o = parseFloat(bar.open);
+                const c = parseFloat(bar.close);
 
                 if (c > o) {
-                    total_buy += (c - o);  // Akumulasi ukuran badan lilin naik (Bullish)
+                    total_buy += (c - o);  // Akumulasi ukuran badan lilin hijau (Bullish)
                 } else if (c < o) {
-                    total_sell += (o - c); // Akumulasi ukuran badan lilin turun (Bearish)
+                    total_sell += (o - c); // Akumulasi ukuran badan lilin merah (Bearish)
                 }
             }
 
@@ -369,31 +380,27 @@
             const svg = document.getElementById('priceChart');
             if (!svg || candles.length === 0) return;
 
-            // Deteksi dimensi viewport SVG secara dinamis
             const width = svg.clientWidth || 380;
             const height = svg.clientHeight || 140;
 
-            // Hanya plot 40 data candle terakhir agar grafik terfokus, rapi, dan responsif
+            // Plot 40 data penutupan lilin terakhir secara halus menggunakan SVG pathing
             const chartData = candles.slice(-40);
-            const prices = chartData.map(c => c.close);
+            const prices = chartData.map(c => parseFloat(c.close));
             const minPrice = Math.min(...prices);
             const maxPrice = Math.max(...prices);
             const range = maxPrice - minPrice || 0.001;
 
-            // Petakan koordinat titik-titik garis
             const points = chartData.map((c, idx) => {
                 const x = (idx / (chartData.length - 1)) * width;
-                const y = height - 12 - ((c.close - minPrice) / range) * (height - 24);
+                const y = height - 12 - ((parseFloat(c.close) - minPrice) / range) * (height - 24);
                 return { x, y };
             });
 
-            // Bangun string koordinat Path SVG
             let pathD = `M ${points[0].x} ${points[0].y}`;
             for (let i = 1; i < points.length; i++) {
                 pathD += ` L ${points[i].x} ${points[i].y}`;
             }
 
-            // String Gradient Fill di bawah garis tren harga
             const gradientD = `${pathD} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
 
             svg.innerHTML = `
@@ -403,17 +410,17 @@
                         <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
                     </linearGradient>
                 </defs>
-                <!-- Grid Bantu Putus-putus -->
+                <!-- Grid Horizontal Divider -->
                 <line x1="0" y1="${height / 2}" x2="${width}" y2="${height / 2}" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="4"/>
                 <line x1="0" y1="${height - 12}" x2="${width}" y2="${height - 12}" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="4"/>
                 
-                <!-- Gradient Area Fill -->
+                <!-- Area Gradient Fill -->
                 <path d="${gradientD}" fill="url(#chartGradient)"/>
                 
-                <!-- Glow Line shadow -->
+                <!-- Glow shadow effect -->
                 <path d="${pathD}" fill="none" stroke="#3b82f6" stroke-width="3.5" filter="drop-shadow(0px 3px 4px rgba(59, 130, 246, 0.3))" stroke-linecap="round"/>
                 
-                <!-- Main Line -->
+                <!-- Main Trend Line -->
                 <path d="${pathD}" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round"/>
             `;
         }
