@@ -3,708 +3,724 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gear Channel Signal Dashboard</title>
-    <!-- Tailwind CSS untuk UI modern -->
+    <title>SBC - Strength Block Dashboard</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- TradingView Lightweight Charts -->
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar style */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
 
-    <!-- Header -->
-    <header class="border-b border-gray-800 bg-gray-900 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center space-x-3">
-            <div class="bg-indigo-600 p-2 rounded-lg">
-                <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+    <!-- HEADER -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wide">SBC STRENGTH BLOCK</h1>
+                    <p class="text-xs text-slate-400">Detektor Kekuatan Struktur Candlestick</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight">Gear Channel Signal</h1>
-                <p class="text-xs text-gray-400">Strategi Non-Repaint Swing Terkonfirmasi</p>
+            
+            <!-- Live Quote Info -->
+            <div class="flex items-center gap-4 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2">
+                <div>
+                    <div class="text-xs text-slate-400 font-medium">INSTRUMEN</div>
+                    <div class="font-bold text-slate-200" id="topSymbol">GBP/USD</div>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-800"></div>
+                <div>
+                    <div class="text-xs text-slate-400 font-medium">HARGA TERAKHIR</div>
+                    <div class="font-bold text-emerald-400 flex items-center gap-1" id="topPrice">
+                        <span>--.----</span>
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    </div>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-800"></div>
+                <div>
+                    <button onclick="fetchData()" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors">
+                        <i id="syncIcon" class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
             </div>
-        </div>
-        <div class="flex items-center space-x-3">
-            <span id="connection-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400">
-                <span class="w-2 h-2 mr-1.5 rounded-full bg-green-400 animate-pulse"></span> Siap
-            </span>
         </div>
     </header>
 
-    <main class="p-4 lg:p-6 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 space-y-6">
         
-        <!-- Panel Kontrol & Pengaturan (Kolom Kiri) -->
-        <section class="lg:col-span-1 space-y-6">
-            <!-- Form Input Ticker -->
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
-                <h2 class="text-md font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i> Sumber Data & Parameter
-                </h2>
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-400 mb-1">Sumber Data API</label>
-                        <select id="datasource-input" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                            <option value="binance" selected>Binance API (Kripto - Sangat Stabil & Bebas CORS)</option>
-                            <option value="yahoo">Yahoo Finance (Saham/Forex - Perlu CORS Proxy)</option>
-                        </select>
-                    </div>
+        <!-- STATUS MESSAGE / BANNER ERROR -->
+        <div id="statusBanner" class="hidden p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm rounded-lg flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span id="statusText">Terjadi kesalahan saat memuat data.</span>
+        </div>
 
-                    <div>
-                        <label class="block text-xs font-medium text-gray-400 mb-1">Simbol / Ticker</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="symbol-input" value="BTCUSDT" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                            <button id="btn-scan" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1">
-                                <i data-lucide="refresh-cw" class="w-4 h-4" id="btn-scan-icon"></i> Scan
-                            </button>
-                        </div>
-                        <p id="ticker-helper-text" class="text-[10px] text-gray-500 mt-1">Contoh: BTCUSDT, ETHUSDT, SOLUSDT</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-gray-400 mb-1">Timeframe (Interval)</label>
-                        <select id="interval-input" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                            <option value="15m">15 Menit</option>
-                            <option value="30m">30 Menit</option>
-                            <option value="1h" selected>1 Jam</option>
-                            <option value="1d">1 Hari</option>
-                        </select>
-                    </div>
-
-                    <div class="border-t border-gray-800 pt-3">
-                        <button id="toggle-advanced" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                            <span>Pengaturan Indikator</span> <i data-lucide="chevron-down" class="w-3 h-3"></i>
-                        </button>
-                        
-                        <div id="advanced-settings" class="hidden space-y-3 mt-3">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] text-gray-400">MA Period (Saluran)</label>
-                                    <input type="number" id="ma-period" value="50" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-400">ATR Period</label>
-                                    <input type="number" id="atr-period" value="14" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] text-gray-400">ATR Multiplier</label>
-                                    <input type="number" step="0.1" id="atr-mult" value="2.5" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-400">Signal Offset (Pips)</label>
-                                    <input type="number" step="0.5" id="signal-offset" value="10.0" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] text-gray-400">Fast EMA Ribbon</label>
-                                    <input type="number" id="fast-ma" value="12" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-400">Slow EMA Ribbon</label>
-                                    <input type="number" id="slow-ma" value="26" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Status Sinyal Terakhir -->
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
-                <h3 class="text-md font-semibold mb-3 flex items-center gap-2">
-                    <i data-lucide="bell" class="w-4 h-4 text-indigo-400"></i> Status Sinyal Terkini
-                </h3>
-                <div id="latest-signal-box" class="flex flex-col items-center justify-center py-6 px-4 bg-gray-850 rounded-lg border border-gray-800">
-                    <span class="text-sm text-gray-400">Belum Ada Analisis</span>
-                </div>
-                <div class="mt-4 flex items-center justify-between text-xs text-gray-400 border-t border-gray-800 pt-3">
-                    <span>Arah Ribbon (EMA 12/26):</span>
-                    <span id="ribbon-status" class="font-semibold">-</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Grafik & Riwayat Sinyal (Kolom Kanan) -->
-        <section class="lg:col-span-3 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             
-            <!-- Area Grafik -->
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-md font-semibold flex items-center gap-2">
-                        <i data-lucide="candlestick-chart" class="w-4 h-4 text-indigo-400"></i> Grafik Interaktif (Lightweight Chart)
-                    </h3>
-                    <div class="text-xs text-gray-400" id="symbol-display">-</div>
+            <!-- PANEL CONTROLS (KIRI) -->
+            <div class="lg:col-span-1 bg-slate-900/40 border border-slate-800/80 rounded-xl p-5 space-y-4">
+                <h2 class="font-semibold text-sm uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-2">
+                    <i class="fa-solid fa-sliders mr-2"></i>Konfigurasi
+                </h2>
+
+                <!-- API Key -->
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 block font-medium">Twelve Data API Key</label>
+                    <input type="password" id="apiKey" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs font-mono outline-none" value="fb747c5e9f9d4da39b7b024548760281">
                 </div>
-                <div id="chart-container" class="w-full h-[450px] bg-gray-950 rounded-lg overflow-hidden relative">
-                    <!-- Loading overlay / Error Alert -->
-                    <div id="overlay-msg" class="absolute inset-0 bg-gray-950/95 flex items-center justify-center z-10 hidden">
-                        <div id="overlay-content" class="flex flex-col items-center space-y-3 p-6 text-center max-w-md">
-                            <!-- Spinner default -->
-                            <div id="overlay-spinner" class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                            <span id="overlay-text" class="text-sm text-gray-300">Mengunduh data pasar...</span>
+
+                <!-- Symbol -->
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 block font-medium">Simbol (Maks. 1)</label>
+                    <input type="text" id="symbol" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs outline-none" value="GBP/USD">
+                </div>
+
+                <!-- Timeframe / Interval -->
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 block font-medium">Timeframe (Interval)</label>
+                    <select id="interval" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs outline-none">
+                        <option value="5min">5 Menit (5m)</option>
+                        <option value="15min">15 Menit (15m)</option>
+                        <option value="30min">30 Menit (30m)</option>
+                        <option value="1h" selected>1 Jam (1H)</option>
+                        <option value="4h">4 Jam (4H)</option>
+                        <option value="1day">1 Hari (D1)</option>
+                    </select>
+                </div>
+
+                <!-- Block Type -->
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400 block font-medium">Tipe Pembagian Blok (MQL4)</label>
+                    <select id="blockType" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs outline-none" onchange="toggleBarsInput()">
+                        <option value="BLOCK_DAILY" selected>BLOCK_DAILY (Harian)</option>
+                        <option value="BLOCK_WEEKLY">BLOCK_WEEKLY (Mingguan)</option>
+                        <option value="BLOCK_BARS">BLOCK_BARS (Jumlah Bar Tetap)</option>
+                    </select>
+                </div>
+
+                <!-- Bars Count (Hidden if not BLOCK_BARS) -->
+                <div id="barsCountWrapper" class="space-y-1 hidden">
+                    <label class="text-xs text-slate-400 block font-medium">Jumlah Bar Tetap</label>
+                    <input type="number" id="barsCount" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded p-2 text-xs outline-none" value="24" min="2">
+                </div>
+
+                <!-- Show Neutral (Mode 3 Row / Mode 2 Row) -->
+                <div class="flex items-center justify-between pt-2">
+                    <span class="text-xs text-slate-400 font-medium">Tampilkan Baris Neutral (3 Row)</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="showNeutral" class="sr-only peer" onchange="renderDashboard()">
+                        <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+                    </label>
+                </div>
+
+                <!-- Auto Refresh Toggle -->
+                <div class="flex items-center justify-between pt-2">
+                    <span class="text-xs text-slate-400 font-medium">Auto Refresh (1 Min)</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="autoRefresh" class="sr-only peer" checked>
+                        <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+                    </label>
+                </div>
+
+                <button onclick="fetchData()" class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded transition-colors uppercase tracking-wider">
+                    <i class="fa-solid fa-play mr-1"></i> Terapkan & Ambil Data
+                </button>
+            </div>
+
+            <!-- SIGNAL & VISUALISASI CHART (KANAN) -->
+            <div class="lg:col-span-3 space-y-6">
+                
+                <!-- ROW 1: SIGNAL SUMMARY -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Gauge Signal Saat Ini -->
+                    <div class="md:col-span-2 bg-slate-900/40 border border-slate-800 p-5 rounded-xl flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] text-indigo-400 uppercase tracking-wider font-semibold">SIGNAL BLOK SAAT INI</span>
+                            <div class="flex items-baseline gap-2 mt-1">
+                                <h3 id="signalDirection" class="text-2xl font-black">---</h3>
+                                <span id="signalStrength" class="text-sm font-semibold text-slate-400">(--%)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Visual Gauge Bar -->
+                        <div class="my-4">
+                            <div class="flex justify-between text-[10px] text-slate-400 mb-1 font-semibold">
+                                <span class="text-rose-400" id="lblGaugeSell">SELL --%</span>
+                                <span class="text-slate-400 hidden" id="lblGaugeNeut">NEUT --%</span>
+                                <span class="text-emerald-400" id="lblGaugeBuy">BUY --%</span>
+                            </div>
+                            <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+                                <div id="gaugeSell" class="bg-rose-600 transition-all duration-500" style="width: 50%;"></div>
+                                <div id="gaugeNeutral" class="bg-slate-600 transition-all duration-500" style="width: 0%;"></div>
+                                <div id="gaugeBuy" class="bg-emerald-600 transition-all duration-500" style="width: 50%;"></div>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            <i class="fa-solid fa-info-circle mr-1"></i> Signal diambil berdasarkan kalkulasi total ukuran badan lilin (body candle) bullish vs bearish di dalam periodisasi blok yang sedang berjalan.
+                        </p>
+                    </div>
+
+                    <!-- Statistik Candlestick -->
+                    <div class="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-3 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] text-indigo-400 uppercase tracking-wider font-semibold">SUMMARY BLOK</span>
+                            <div class="text-xs text-slate-400 mt-1">Status lilin yang terbentuk di dalam rentang waktu aktif:</div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-400"><i class="fa-solid fa-caret-up text-emerald-400 mr-1.5"></i>Lilin Bullish</span>
+                                <span class="font-bold text-slate-200" id="statsBullCount">0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-400"><i class="fa-solid fa-caret-down text-rose-400 mr-1.5"></i>Lilin Bearish</span>
+                                <span class="font-bold text-slate-200" id="statsBearCount">0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs border-t border-slate-800/80 pt-2">
+                                <span class="text-slate-400">Total Rentang Blok</span>
+                                <span class="font-bold text-indigo-400" id="statsTotalBars">0 Bar</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Tabel Riwayat Sinyal -->
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
-                <h3 class="text-md font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i> Log Sinyal Historis Terkonfirmasi
-                </h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-gray-800 text-xs text-gray-400 uppercase tracking-wider">
-                                <th class="py-3 px-4">Waktu</th>
-                                <th class="py-3 px-4">Sinyal</th>
-                                <th class="py-3 px-4">Harga Swing</th>
-                                <th class="py-3 px-4">Batas Atas/Bawah</th>
-                                <th class="py-3 px-4">Status Saluran</th>
-                            </tr>
-                        </thead>
-                        <tbody id="signal-table-body" class="text-sm divide-y divide-gray-800">
-                            <tr>
-                                <td colspan="5" class="py-6 text-center text-gray-500">Gunakan tombol "Scan" di atas untuk mencari sinyal.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- ROW 2: SUBWINDOW VISUALISASI GRID (Mirip MT4 Subwindow) -->
+                <div class="bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                            <i class="fa-solid fa-chart-column mr-2 text-indigo-400"></i>Panel Visual Indikator (Subwindow Online)
+                        </span>
+                        <div class="flex items-center gap-2 text-[10px] text-slate-400">
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-emerald-600/30 border border-emerald-500 rounded-sm"></span> Buy %</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-rose-600/30 border border-rose-500 rounded-sm"></span> Sell %</span>
+                        </div>
+                    </div>
+
+                    <!-- Visual Panel Grid -->
+                    <div class="p-4 bg-slate-950/80">
+                        <!-- Horizontal Scroll Container -->
+                        <div id="visualChart" class="flex flex-row overflow-x-auto min-h-[300px] border border-slate-800 rounded bg-slate-950 p-2 items-end gap-1 select-none">
+                            <div class="w-full text-center py-20 text-slate-500 text-sm">
+                                <i class="fa-solid fa-spinner animate-spin mr-2"></i>Menunggu data Twelve Data...
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- ROW 3: DETIL RIWAYAT BLOK -->
+                <div class="bg-slate-900/40 border border-slate-800 rounded-xl overflow-hidden">
+                    <div class="p-4 border-b border-slate-800">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                            <i class="fa-solid fa-list mr-2 text-indigo-400"></i>Data Riwayat Rentang Blok
+                        </span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900 text-[10px] uppercase text-slate-400 font-bold border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3">Rentang Tanggal/Jam (Start - End)</th>
+                                    <th class="p-3 text-center">Bull Body</th>
+                                    <th class="p-3 text-center">Bear Body</th>
+                                    <th class="p-3 text-center">Wicks (Neutral)</th>
+                                    <th class="p-3 text-center">Signal Dominan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody" class="divide-y divide-slate-800/50">
+                                <tr>
+                                    <td colspan="5" class="p-4 text-center text-slate-500">Silakan masukkan API Key dan klik muat data.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
-        </section>
+        </div>
     </main>
 
-    <!-- Footer penjelasan -->
-    <footer class="text-center py-8 text-xs text-gray-500 max-w-4xl mx-auto px-6 border-t border-gray-900 mt-12">
-        <p><strong>Penjelasan Logika Non-Repaint:</strong> Sistem ini menghitung ulang parameter indikator berdasarkan data penutupan bar secara berurutan. Sinyal dipicu pada bar ke-3 dari belakang (atau bar indeks ke-2 dari saat ini) apabila titik terendah (Low) atau tertinggi (High) menyentuh atau melampaui band luar yang diperlebar oleh ATR, setelah candle berikutnya ditutup untuk menghindari pemalsuan gambar (*repaint*).</p>
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-900/30 py-4 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div>SBC Signal Dashboard &copy; 2026. Dioptimalkan untuk GBP/USD.</div>
+            <div class="flex items-center gap-1.5">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Berjalan secara lokal tanpa database VPS (GitHub Pages)</span>
+            </div>
+        </div>
     </footer>
 
+    <!-- LOGIC SYSTEM & SCRIPT -->
     <script>
-        // Inisialisasi ikon Lucide
-        lucide.createIcons();
+        let cachedBars = []; // Menyimpan data historis lilin
+        let updateInterval = null;
 
-        // Elemen UI
-        const toggleAdvanced = document.getElementById('toggle-advanced');
-        const advancedSettings = document.getElementById('advanced-settings');
-        const datasourceInput = document.getElementById('datasource-input');
-        const symbolInput = document.getElementById('symbol-input');
-        const tickerHelperText = document.getElementById('ticker-helper-text');
-        const intervalInput = document.getElementById('interval-input');
-        const btnScan = document.getElementById('btn-scan');
-        const btnScanIcon = document.getElementById('btn-scan-icon');
-        const overlayMsg = document.getElementById('overlay-msg');
-        const overlaySpinner = document.getElementById('overlay-spinner');
-        const overlayText = document.getElementById('overlay-text');
-        const latestSignalBox = document.getElementById('latest-signal-box');
-        const ribbonStatusEl = document.getElementById('ribbon-status');
-        const symbolDisplay = document.getElementById('symbol-display');
-        const signalTableBody = document.getElementById('signal-table-body');
-        const chartContainer = document.getElementById('chart-container');
+        // Inisialisasi awal saat halaman dimuat
+        window.addEventListener('load', () => {
+            // Memulihkan data konfigurasi yang tersimpan di LocalStorage
+            loadConfig();
+            toggleBarsInput();
+            fetchData();
 
-        // Toggle form parameter tambahan
-        toggleAdvanced.addEventListener('click', () => {
-            advancedSettings.classList.toggle('hidden');
+            // Set up auto-refresh
+            setupAutoRefresh();
         });
 
-        // Ubah contoh teks saat sumber data diganti
-        datasourceInput.addEventListener('change', () => {
-            if (datasourceInput.value === 'binance') {
-                symbolInput.value = 'BTCUSDT';
-                tickerHelperText.textContent = 'Contoh: BTCUSDT, ETHUSDT, SOLUSDT, XRPUSDT';
+        function loadConfig() {
+            if(localStorage.getItem('sbc_apiKey')) document.getElementById('apiKey').value = localStorage.getItem('sbc_apiKey');
+            if(localStorage.getItem('sbc_symbol')) document.getElementById('symbol').value = localStorage.getItem('sbc_symbol');
+            if(localStorage.getItem('sbc_interval')) document.getElementById('interval').value = localStorage.getItem('sbc_interval');
+            if(localStorage.getItem('sbc_blockType')) document.getElementById('blockType').value = localStorage.getItem('sbc_blockType');
+            if(localStorage.getItem('sbc_barsCount')) document.getElementById('barsCount').value = localStorage.getItem('sbc_barsCount');
+            if(localStorage.getItem('sbc_showNeutral')) document.getElementById('showNeutral').checked = localStorage.getItem('sbc_showNeutral') === 'true';
+            if(localStorage.getItem('sbc_autoRefresh')) document.getElementById('autoRefresh').checked = localStorage.getItem('sbc_autoRefresh') === 'true';
+        }
+
+        function saveConfig() {
+            localStorage.setItem('sbc_apiKey', document.getElementById('apiKey').value);
+            localStorage.setItem('sbc_symbol', document.getElementById('symbol').value);
+            localStorage.setItem('sbc_interval', document.getElementById('interval').value);
+            localStorage.setItem('sbc_blockType', document.getElementById('blockType').value);
+            localStorage.setItem('sbc_barsCount', document.getElementById('barsCount').value);
+            localStorage.setItem('sbc_showNeutral', document.getElementById('showNeutral').checked);
+            localStorage.setItem('sbc_autoRefresh', document.getElementById('autoRefresh').checked);
+        }
+
+        function toggleBarsInput() {
+            const blockType = document.getElementById('blockType').value;
+            const wrapper = document.getElementById('barsCountWrapper');
+            if (blockType === 'BLOCK_BARS') {
+                wrapper.classList.remove('hidden');
             } else {
-                symbolInput.value = 'EURUSD=X';
-                tickerHelperText.textContent = 'Contoh: EURUSD=X, GBPUSD=X, ^JKSE, BBRI.JK';
-            }
-        });
-
-        // Inisialisasi Grafik TradingView Lightweight Charts
-        let chart = null;
-        let candleSeries = null;
-        let upperBandSeries = null;
-        let lowerBandSeries = null;
-        let fastEMASeries = null;
-        let slowEMASeries = null;
-
-        function initializeChart() {
-            if (chart) {
-                chart.remove();
-            }
-
-            const containerWidth = chartContainer.clientWidth || chartContainer.getBoundingClientRect().width || 800;
-
-            chart = LightweightCharts.createChart(chartContainer, {
-                width: containerWidth,
-                height: 450,
-                layout: {
-                    background: { type: 'solid', color: '#111827' },
-                    textColor: '#9ca3af',
-                },
-                grid: {
-                    vertLines: { color: '#1f2937' },
-                    horzLines: { color: '#1f2937' },
-                },
-                crosshair: {
-                    mode: LightweightCharts.CrosshairMode.Normal,
-                },
-                rightPriceScale: {
-                    borderColor: '#1f2937',
-                },
-                timeScale: {
-                    borderColor: '#1f2937',
-                    timeVisible: true,
-                    secondsVisible: false,
-                },
-            });
-
-            // Tambahkan serial visualisasi chart
-            candleSeries = chart.addCandlestickSeries({
-                upColor: '#10b981',
-                downColor: '#ef4444',
-                borderUpColor: '#10b981',
-                borderDownColor: '#ef4444',
-                wickUpColor: '#10b981',
-                wickDownColor: '#ef4444',
-            });
-
-            upperBandSeries = chart.addLineSeries({
-                color: '#ef4444', // Red / Batas Atas
-                lineWidth: 1.5,
-                title: 'Batas Atas (ATR + LWMA)'
-            });
-
-            lowerBandSeries = chart.addLineSeries({
-                color: '#10b981', // Green / Batas Bawah
-                lineWidth: 1.5,
-                title: 'Batas Bawah'
-            });
-
-            fastEMASeries = chart.addLineSeries({
-                color: '#3b82f6', // Biru
-                lineWidth: 1,
-                lineStyle: LightweightCharts.LineStyle.Dashed,
-                title: 'Fast EMA (Ribbon)'
-            });
-
-            slowEMASeries = chart.addLineSeries({
-                color: '#a855f7', // Ungu
-                lineWidth: 1,
-                lineStyle: LightweightCharts.LineStyle.Dashed,
-                title: 'Slow EMA (Ribbon)'
-            });
-
-            // Handle responsivitas ukuran chart
-            window.addEventListener('resize', () => {
-                const w = chartContainer.clientWidth || chartContainer.getBoundingClientRect().width || 800;
-                chart.resize(w, 450);
-            });
-        }
-
-        // Jalankan inisialisasi awal
-        initializeChart();
-
-        // === FUNGSI MATEMATIKA / INDIKATOR ===
-
-        function calculateLWMA(values, period) {
-            let lwma = new Array(values.length).fill(null);
-            let weightSum = (period * (period + 1)) / 2;
-            for (let i = period - 1; i < values.length; i++) {
-                let sum = 0;
-                for (let j = 0; j < period; j++) {
-                    sum += values[i - period + 1 + j] * (j + 1);
-                }
-                lwma[i] = sum / weightSum;
-            }
-            return lwma;
-        }
-
-        function calculateEMA(values, period) {
-            let ema = new Array(values.length).fill(null);
-            if (values.length < period) return ema;
-
-            let sum = 0;
-            for (let i = 0; i < period; i++) {
-                sum += values[i];
-            }
-            ema[period - 1] = sum / period;
-
-            let k = 2 / (period + 1);
-            for (let i = period; i < values.length; i++) {
-                ema[i] = values[i] * k + ema[i - 1] * (1 - k);
-            }
-            return ema;
-        }
-
-        function calculateATR(high, low, close, period) {
-            let atr = new Array(high.length).fill(null);
-            if (high.length < period) return atr;
-
-            let tr = new Array(high.length).fill(0);
-            tr[0] = high[0] - low[0];
-            for (let i = 1; i < high.length; i++) {
-                let tr1 = high[i] - low[i];
-                let tr2 = Math.abs(high[i] - close[i - 1]);
-                let tr3 = Math.abs(low[i] - close[i - 1]);
-                tr[i] = Math.max(tr1, tr2, tr3);
-            }
-
-            let sum = 0;
-            for (let i = 0; i < period; i++) {
-                sum += tr[i];
-            }
-            atr[period - 1] = sum / period;
-            for (let i = period; i < high.length; i++) {
-                sum = sum - tr[i - period] + tr[i];
-                atr[i] = sum / period;
-            }
-            return atr;
-        }
-
-        function getPipSize(price) {
-            if (price > 1000) return 1.0;
-            if (price > 50) return 0.1;
-            if (price > 1) return 0.01;
-            return 0.0001;
-        }
-
-        function playAlertSound(type) {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                if (type === 'buy') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
-                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
-                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-                    osc.start(ctx.currentTime);
-                    osc.stop(ctx.currentTime + 0.4);
-                } else {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(392.00, ctx.currentTime);
-                    osc.frequency.setValueAtTime(349.23, ctx.currentTime + 0.1);
-                    osc.frequency.setValueAtTime(261.63, ctx.currentTime + 0.2);
-                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-                    osc.start(ctx.currentTime);
-                    osc.stop(ctx.currentTime + 0.4);
-                }
-            } catch (e) {
-                console.warn('Audio error:', e);
+                wrapper.classList.add('hidden');
             }
         }
 
-        // === ENGINE KOMUNIKASI DATA ===
-
-        // Mengambil data dari Binance (CORS-Native, sangat lancar di GitHub Pages)
-        async function fetchBinanceData(symbol, interval) {
-            const limit = 500;
-            const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error("Simbol koin tidak valid atau API Binance sedang bermasalah.");
-            }
-            const data = await response.json();
+        // Setup timer untuk update berkala
+        function setupAutoRefresh() {
+            if(updateInterval) clearInterval(updateInterval);
             
-            // Format keluaran Binance: array of arrays
-            return data.map(item => ({
-                time: Math.floor(item[0] / 1000), // ms ke seconds
-                open: parseFloat(item[1]),
-                high: parseFloat(item[2]),
-                low: parseFloat(item[3]),
-                close: parseFloat(item[4])
-            }));
-        }
-
-        // Mengambil data dari Yahoo Finance (Perlu melewati Proxy Fallback)
-        async function fetchYahooDataWithFallback(symbol, interval) {
-            let range = '1mo';
-            if (interval === '15m' || interval === '30m') range = '5d';
-            if (interval === '1d') range = '1y';
-
-            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-            
-            // Daftar proxy alternatif jika salah satu diblokir CORS
-            const proxies = [
-                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-                (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-            ];
-
-            let lastError = null;
-            for (let i = 0; i < proxies.length; i++) {
-                try {
-                    const proxyUrl = proxies[i](yahooUrl);
-                    const response = await fetch(proxyUrl);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.chart && data.chart.result && data.chart.result.length > 0) {
-                            const result = data.chart.result[0];
-                            const timestamps = result.timestamp;
-                            const quote = result.indicators.quote[0];
-                            
-                            const candles = [];
-                            for (let j = 0; j < timestamps.length; j++) {
-                                if (quote.close[j] !== null && quote.high[j] !== null && quote.low[j] !== null && quote.open[j] !== null) {
-                                    candles.push({
-                                        time: timestamps[j],
-                                        open: quote.open[j],
-                                        high: quote.high[j],
-                                        low: quote.low[j],
-                                        close: quote.close[j]
-                                    });
-                                }
-                            }
-                            return candles;
-                        }
-                    }
-                } catch (e) {
-                    lastError = e;
-                    console.warn(`Proxy ${i+1} gagal, mencoba proxy selanjutnya...`, e);
+            updateInterval = setInterval(() => {
+                const auto = document.getElementById('autoRefresh').checked;
+                if(auto) {
+                    console.log("Melakukan auto-refresh otomatis...");
+                    fetchData();
                 }
-            }
-            throw lastError || new Error("Semua proxy CORS diblokir. Harap coba mode Binance (Kripto) yang tanpa proxy.");
+            }, 60000); // Setiap 1 menit
         }
 
-        // === SCANNER UTAMA ===
-        async function runScanner() {
-            // Tampilkan loading screen
-            overlaySpinner.className = "w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin";
-            overlayText.textContent = "Mengunduh data pasar...";
-            overlayMsg.classList.remove('hidden');
-            
-            btnScanIcon.classList.add('animate-spin');
-            btnScan.disabled = true;
+        // Mengambil data dari Twelve Data API
+        async function fetchData() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const symbol = document.getElementById('symbol').value.trim();
+            const interval = document.getElementById('interval').value;
+            const syncIcon = document.getElementById('syncIcon');
+            const banner = document.getElementById('statusBanner');
 
-            const dataSource = datasourceInput.value;
-            const symbol = symbolInput.value.toUpperCase().trim();
-            const interval = intervalInput.value;
+            if (!apiKey) {
+                showError("Gagal: API Key Twelve Data harus diisi!");
+                return;
+            }
 
-            // Membaca pengaturan kustom
-            const InpMAPeriod = parseInt(document.getElementById('ma-period').value) || 50;
-            const InpATRPeriod = parseInt(document.getElementById('atr-period').value) || 14;
-            const InpATRMultiplier = parseFloat(document.getElementById('atr-mult').value) || 2.5;
-            const InpFastMAPeriod = parseInt(document.getElementById('fast-ma').value) || 12;
-            const InpSlowMAPeriod = parseInt(document.getElementById('slow-ma').value) || 26;
-            const InpSignalOffset = parseFloat(document.getElementById('signal-offset').value) || 10.0;
+            saveConfig();
+            syncIcon.classList.add('animate-spin');
+            banner.classList.add('hidden');
+
+            // Kita meminta 250 bars agar cakupan pembagian block (Daily/Weekly) cukup panjang ke belakang
+            const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${interval}&apikey=${apiKey}&outputsize=250`;
 
             try {
-                let candles = [];
-                if (dataSource === 'binance') {
-                    candles = await fetchBinanceData(symbol, interval);
-                } else {
-                    candles = await fetchYahooDataWithFallback(symbol, interval);
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status === 'error') {
+                    showError(`Kesalahan API: ${data.message}`);
+                    syncIcon.classList.remove('animate-spin');
+                    return;
                 }
 
-                if (!candles || candles.length < Math.max(InpMAPeriod, InpSlowMAPeriod) + 10) {
-                    throw new Error("Panjang histori candle tidak mencukupi untuk menghitung indikator.");
+                if (!data.values || data.values.length === 0) {
+                    showError("Tidak ada data yang diterima dari API. Pastikan Simbol benar.");
+                    syncIcon.classList.remove('animate-spin');
+                    return;
                 }
 
-                const length = candles.length;
-                const closes = candles.map(c => c.close);
-                const highs = candles.map(c => c.high);
-                const lows = candles.map(c => c.low);
+                // Simpan data & urutkan dari TERTUA ke TERBARU
+                cachedBars = [...data.values].reverse();
 
-                // Hitung Indikator
-                const lwmaCenter = calculateLWMA(closes, InpMAPeriod);
-                const atr = calculateATR(highs, lows, closes, InpATRPeriod);
-                const fastEMA = calculateEMA(closes, InpFastMAPeriod);
-                const slowEMA = calculateEMA(closes, InpSlowMAPeriod);
+                // Update harga terakhir di panel atas
+                const lastPrice = parseFloat(cachedBars[cachedBars.length - 1].close);
+                document.getElementById('topPrice').innerHTML = `
+                    <span>${lastPrice.toFixed(5)}</span>
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                `;
+                document.getElementById('topSymbol').innerText = symbol.toUpperCase();
 
-                const upperBand = [];
-                const lowerBand = [];
-                
-                for (let i = 0; i < length; i++) {
-                    if (lwmaCenter[i] !== null && atr[i] !== null) {
-                        upperBand.push(lwmaCenter[i] + (atr[i] * InpATRMultiplier));
-                        lowerBand.push(lwmaCenter[i] - (atr[i] * InpATRMultiplier));
-                    } else {
-                        upperBand.push(null);
-                        lowerBand.push(null);
-                    }
-                }
-
-                // Reset visual grafik
-                initializeChart();
-                symbolDisplay.textContent = `${symbol} (${interval})`;
-
-                candleSeries.setData(candles);
-
-                const formattedUpper = candles.map((c, idx) => ({ time: c.time, value: upperBand[idx] })).filter(d => d.value !== null);
-                const formattedLower = candles.map((c, idx) => ({ time: c.time, value: lowerBand[idx] })).filter(d => d.value !== null);
-                const formattedFast = candles.map((c, idx) => ({ time: c.time, value: fastEMA[idx] })).filter(d => d.value !== null);
-                const formattedSlow = candles.map((c, idx) => ({ time: c.time, value: slowEMA[idx] })).filter(d => d.value !== null);
-
-                upperBandSeries.setData(formattedUpper);
-                lowerBandSeries.setData(formattedLower);
-                fastEMASeries.setData(formattedFast);
-                slowEMASeries.setData(formattedSlow);
-
-                // Deteksi Sinyal Gir (3-Bar Swing Non-Repaint Konfirmasi)
-                const markers = [];
-                const historicalSignals = [];
-
-                const referencePrice = closes[length - 1];
-                const pipSize = getPipSize(referencePrice);
-                const offset = InpSignalOffset * pipSize;
-
-                // Loop dari indeks 3 sampai N-3 (Swing Low/High terkonfirmasi di bar k)
-                for (let k = 3; k < length - 2; k++) {
-                    if (upperBand[k] === null || lowerBand[k] === null) continue;
-
-                    const dateStr = new Date(candles[k].time * 1000).toLocaleString('id-ID');
-
-                    // 1. Logika Sinyal BUY (Swing Low pada k)
-                    if (lows[k] < lows[k-1] && lows[k] < lows[k+1]) {
-                        if (lows[k] <= lowerBand[k] + (5 * pipSize)) {
-                            markers.push({
-                                time: candles[k].time,
-                                position: 'belowBar',
-                                color: '#10b981',
-                                shape: 'arrowUp',
-                                text: 'BUY (Gear)',
-                                size: 1.5
-                            });
-
-                            historicalSignals.push({
-                                timeRaw: candles[k].time,
-                                date: dateStr,
-                                type: 'BUY',
-                                price: lows[k].toFixed(referencePrice > 100 ? 2 : 5),
-                                bandLimit: lowerBand[k].toFixed(referencePrice > 100 ? 2 : 5),
-                                status: 'Menyentuh Band Bawah'
-                            });
-                        }
-                    }
-
-                    // 2. Logika Sinyal SELL (Swing High pada k)
-                    if (highs[k] > highs[k-1] && highs[k] > highs[k+1]) {
-                        if (highs[k] >= upperBand[k] - (5 * pipSize)) {
-                            markers.push({
-                                time: candles[k].time,
-                                position: 'aboveBar',
-                                color: '#ef4444',
-                                shape: 'arrowDown',
-                                text: 'SELL (Gear)',
-                                size: 1.5
-                            });
-
-                            historicalSignals.push({
-                                timeRaw: candles[k].time,
-                                date: dateStr,
-                                type: 'SELL',
-                                price: highs[k].toFixed(referencePrice > 100 ? 2 : 5),
-                                bandLimit: upperBand[k].toFixed(referencePrice > 100 ? 2 : 5),
-                                status: 'Menyentuh Band Atas'
-                            });
-                        }
-                    }
-                }
-
-                // Gambar panah sinyal di chart
-                candleSeries.setMarkers(markers);
-
-                // Update Tabel Riwayat Sinyal
-                historicalSignals.reverse();
-                if (historicalSignals.length === 0) {
-                    signalTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="5" class="py-6 text-center text-gray-500">Tidak ada riwayat sinyal terdeteksi pada bar histori saat ini.</td>
-                        </tr>`;
-                } else {
-                    signalTableBody.innerHTML = historicalSignals.map(sig => `
-                        <tr class="hover:bg-gray-850 border-b border-gray-800">
-                            <td class="py-3 px-4 text-xs font-mono text-gray-400">${sig.date}</td>
-                            <td class="py-3 px-4">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                                    sig.type === 'BUY' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
-                                }">
-                                    ${sig.type}
-                                </span>
-                            </td>
-                            <td class="py-3 px-4 font-mono font-semibold">${sig.price}</td>
-                            <td class="py-3 px-4 font-mono text-gray-400">${sig.bandLimit}</td>
-                            <td class="py-3 px-4 text-xs text-gray-400">${sig.status}</td>
-                        </tr>
-                    `).join('');
-                }
-
-                // Tentukan status Ribbon pita terakhir (EMA 12 vs 26)
-                const lastFast = fastEMA[length - 1];
-                const lastSlow = slowEMA[length - 1];
-                if (lastFast > lastSlow) {
-                    ribbonStatusEl.textContent = 'Bullish (Biru > Ungu)';
-                    ribbonStatusEl.className = 'font-semibold text-green-400';
-                } else {
-                    ribbonStatusEl.textContent = 'Bearish (Biru < Ungu)';
-                    ribbonStatusEl.className = 'font-semibold text-red-400';
-                }
-
-                // Sinyal terbaru dikonfirmasi
-                const lastConfirmedBarIdx = length - 3;
-                const lastConfirmedSignal = historicalSignals.find(s => s.timeRaw === candles[lastConfirmedBarIdx].time);
-                
-                if (lastConfirmedSignal) {
-                    playAlertSound(lastConfirmedSignal.type.toLowerCase());
-                    latestSignalBox.innerHTML = `
-                        <div class="text-center">
-                            <div class="inline-flex p-3 rounded-full ${lastConfirmedSignal.type === 'BUY' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} mb-2">
-                                <i data-lucide="${lastConfirmedSignal.type === 'BUY' ? 'trending-up' : 'trending-down'}" class="w-8 h-8"></i>
-                            </div>
-                            <div class="text-lg font-bold ${lastConfirmedSignal.type === 'BUY' ? 'text-green-400' : 'text-red-400'}">${lastConfirmedSignal.type} SIGNAL</div>
-                            <div class="text-xs text-gray-400 mt-1">Harga Swing: <span class="font-mono text-white font-semibold">${lastConfirmedSignal.price}</span></div>
-                            <div class="text-[10px] text-gray-500 mt-2">Dikonfirmasi pada: ${lastConfirmedSignal.date}</div>
-                        </div>
-                    `;
-                } else {
-                    latestSignalBox.innerHTML = `
-                        <div class="text-center text-gray-500 py-3">
-                            <i data-lucide="minus-circle" class="w-8 h-8 mx-auto mb-2 text-gray-600"></i>
-                            <span class="text-xs">Tidak ada sinyal aktif di bar konfirmasi saat ini (Menunggu swing baru).</span>
-                        </div>
-                    `;
-                }
-
-                // Sembunyikan loading screen jika sukses
-                overlayMsg.classList.add('hidden');
-                chart.timeScale().fitContent();
-                lucide.createIcons();
+                // Render visual berdasarkan pengaturan user
+                renderDashboard();
 
             } catch (err) {
-                console.error(err);
-                
-                // Tampilkan pesan error informatif pada kontainer chart (agar tidak blank)
-                overlaySpinner.className = "hidden";
-                overlayText.innerHTML = `
-                    <div class="bg-red-950/40 p-4 border border-red-800 rounded-lg max-w-sm">
-                        <p class="text-red-400 font-bold text-sm mb-2">Koneksi API Gagal</p>
-                        <p class="text-gray-300 text-xs mb-4">${err.message}</p>
-                        <p class="text-gray-400 text-[11px]">Saran: Gunakan opsi <strong>Binance API (Kripto)</strong> yang dijamin lancar tanpa perlu melewati CORS proxy.</p>
-                    </div>
-                `;
-                overlayMsg.classList.remove('hidden');
-
-                signalTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="py-6 text-center text-red-400">Gagal memuat data. Mohon periksa kembali ticker atau pilih Binance API.</td>
-                    </tr>`;
+                showError(`Kesalahan Koneksi Jaringan: ${err.message}`);
             } finally {
-                btnScanIcon.classList.remove('animate-spin');
-                btnScan.disabled = false;
+                syncIcon.classList.remove('animate-spin');
             }
         }
 
-        // Jalankan scanner jika tombol diklik
-        btnScan.addEventListener('click', runScanner);
+        function showError(msg) {
+            const banner = document.getElementById('statusBanner');
+            const text = document.getElementById('statusText');
+            text.innerText = msg;
+            banner.classList.remove('hidden');
+        }
 
-        // Scan otomatis pertama kali saat halaman dibuka
-        setTimeout(runScanner, 500);
+        // Parsing waktu "YYYY-MM-DD HH:MM:SS" ke struktur Tanggal Lokal aman lintas browser
+        function parseCustomDate(dateStr) {
+            const parts = dateStr.split(' ');
+            const dateParts = parts[0].split('-');
+            const timeParts = parts[1] ? parts[1].split(':') : [0, 0, 0];
+            return new Date(
+                parseInt(dateParts[0]),
+                parseInt(dateParts[1]) - 1,
+                parseInt(dateParts[2]),
+                parseInt(timeParts[0]),
+                parseInt(timeParts[1]),
+                parseInt(timeParts[2] || 0)
+            );
+        }
+
+        // Menghitung kekuatan segmentasi lilin sesuai algoritma kekuatan.mq4
+        function calculatePercentages(bars, startIdx, endIdx, showNeutral) {
+            let total_buy = 0;
+            let total_sell = 0;
+            let total_neutral = 0;
+
+            let bullCount = 0;
+            let bearCount = 0;
+
+            for (let i = startIdx; i <= endIdx; i++) {
+                const bar = bars[i];
+                const o = parseFloat(bar.open);
+                const h = parseFloat(bar.high);
+                const l = parseFloat(bar.low);
+                const c = parseFloat(bar.close);
+
+                if (c > o) bullCount++;
+                if (c < o) bearCount++;
+
+                if (showNeutral) {
+                    // Mode 3 Row: Bull Body = Buy, Bear Body = Sell, Wicks = Neutral
+                    const body = Math.abs(c - o);
+                    let upper_wick = 0;
+                    let lower_wick = 0;
+
+                    if (c >= o) {
+                        upper_wick = h - c;
+                        lower_wick = o - l;
+                    } else {
+                        upper_wick = h - o;
+                        lower_wick = c - l;
+                    }
+                    const wicks = upper_wick + lower_wick;
+
+                    if (c > o) {
+                        total_buy += body;
+                    } else if (c < o) {
+                        total_sell += body;
+                    }
+                    total_neutral += wicks;
+                } else {
+                    // Mode 2 Row: Perbandingan mutlak badan lilin hijau vs merah
+                    if (c > o) {
+                        total_buy += (c - o);
+                    } else if (c < o) {
+                        total_sell += (o - c);
+                    }
+                }
+            }
+
+            const total_range = total_buy + total_sell + total_neutral;
+            let buy_pct = 50.0;
+            let sell_pct = 50.0;
+            let neutral_pct = 0.0;
+
+            if (total_range > 0) {
+                buy_pct = (total_buy / total_range) * 100;
+                sell_pct = (total_sell / total_range) * 100;
+                neutral_pct = (total_neutral / total_range) * 100;
+            }
+
+            return {
+                buy: Math.round(buy_pct),
+                sell: Math.round(sell_pct),
+                neutral: Math.round(neutral_pct),
+                bullCount: bullCount,
+                bearCount: bearCount,
+                totalBars: (endIdx - startIdx) + 1
+            };
+        }
+
+        // Membagi seluruh rentang candle menjadi segmentasi Block (MQL4 Mirroring)
+        function renderDashboard() {
+            if (cachedBars.length === 0) return;
+
+            const blockType = document.getElementById('blockType').value;
+            const barsCount = parseInt(document.getElementById('barsCount').value) || 24;
+            const showNeutral = document.getElementById('showNeutral').checked;
+
+            const blocks = [];
+            let current_start = 0;
+
+            for (let i = 1; i < cachedBars.length; i++) {
+                let is_new_block = false;
+                const prevBar = cachedBars[i - 1];
+                const currBar = cachedBars[i];
+
+                const prevDate = parseCustomDate(prevBar.datetime);
+                const currDate = parseCustomDate(currBar.datetime);
+
+                if (blockType === 'BLOCK_DAILY') {
+                    if (prevDate.getDate() !== currDate.getDate() ||
+                        prevDate.getMonth() !== currDate.getMonth() ||
+                        prevDate.getFullYear() !== currDate.getFullYear()) {
+                        is_new_block = true;
+                    }
+                } else if (blockType === 'BLOCK_WEEKLY') {
+                    // Cek jika perpindahan dari akhir pekan atau hari lompat mundur (pembatas minggu)
+                    const prevTime = prevDate.getTime();
+                    const currTime = currDate.getTime();
+                    if (currDate.getDay() < prevDate.getDay() || (currTime - prevTime) > 172800000) {
+                        is_new_block = true;
+                    }
+                } else if (blockType === 'BLOCK_BARS') {
+                    if ((i - current_start) >= barsCount) {
+                        is_new_block = true;
+                    }
+                }
+
+                if (is_new_block) {
+                    blocks.push({
+                        start_bar: current_start,
+                        end_bar: i - 1,
+                        startDate: cachedBars[current_start].datetime,
+                        endDate: cachedBars[i - 1].datetime
+                    });
+                    current_start = i;
+                }
+            }
+
+            // Push sisa block terakhir (yang sedang berjalan/developing)
+            if (current_start < cachedBars.length) {
+                blocks.push({
+                    start_bar: current_start,
+                    end_bar: cachedBars.length - 1,
+                    startDate: cachedBars[current_start].datetime,
+                    endDate: cachedBars[cachedBars.length - 1].datetime
+                });
+            }
+
+            // Hitung persentase tiap blok hasil split
+            const calculatedBlocks = blocks.map((b, index) => {
+                const results = calculatePercentages(cachedBars, b.start_bar, b.end_bar, showNeutral);
+                return {
+                    ...b,
+                    ...results,
+                    id: index
+                };
+            });
+
+            // Jalankan UI render
+            drawVisualGrid(calculatedBlocks, showNeutral);
+            updateSummaryWidget(calculatedBlocks, showNeutral);
+            drawHistoryTable(calculatedBlocks, showNeutral);
+        }
+
+        // Menggambar Grid Grafik Subwindow Vertikal mirip MT4
+        function drawVisualGrid(blockData, showNeutral) {
+            const chartContainer = document.getElementById('visualChart');
+            chartContainer.innerHTML = '';
+
+            blockData.forEach((block, index) => {
+                const col = document.createElement('div');
+                col.className = "flex-shrink-0 w-[140px] md:w-[160px] border-r border-slate-800 flex flex-col justify-between h-full relative group hover:bg-slate-900/40 transition-colors";
+
+                // Container Bar Visual
+                const barContainer = document.createElement('div');
+                barContainer.className = "relative w-full flex-grow flex flex-col justify-end h-[240px] bg-slate-950 px-2 pb-1 pt-4 gap-0.5";
+
+                // Sell Segment (Top)
+                const sellDiv = document.createElement('div');
+                sellDiv.style.height = `${block.sell}%`;
+                sellDiv.className = "bg-rose-500/20 hover:bg-rose-500/35 border-t border-b border-rose-500/30 flex items-center justify-center text-rose-400 font-extrabold text-[10px] select-none relative transition-all duration-300 rounded-sm";
+                sellDiv.innerHTML = `<span>SELL ${block.sell}%</span>`;
+
+                // Neutral Segment (Jika dicentang)
+                let neutralDiv = null;
+                if (showNeutral) {
+                    neutralDiv = document.createElement('div');
+                    neutralDiv.style.height = `${block.neutral}%`;
+                    neutralDiv.className = "bg-slate-500/15 hover:bg-slate-500/25 border-t border-b border-slate-500/20 flex items-center justify-center text-slate-400 font-extrabold text-[10px] select-none relative transition-all duration-300 rounded-sm";
+                    neutralDiv.innerHTML = `<span>NEUT ${block.neutral}%</span>`;
+                }
+
+                // Buy Segment (Bottom)
+                const buyDiv = document.createElement('div');
+                buyDiv.style.height = `${block.buy}%`;
+                buyDiv.className = "bg-emerald-500/20 hover:bg-emerald-500/35 border-t border-b border-emerald-500/30 flex items-center justify-center text-emerald-400 font-extrabold text-[10px] select-none relative transition-all duration-300 rounded-sm";
+                buyDiv.innerHTML = `<span>BUY ${block.buy}%</span>`;
+
+                // Susun vertical stacked layout
+                barContainer.appendChild(sellDiv);
+                if (showNeutral && neutralDiv) {
+                    barContainer.appendChild(neutralDiv);
+                }
+                barContainer.appendChild(buyDiv);
+
+                // Label Rentang Tanggal di bawah bar
+                const timeLabel = document.createElement('div');
+                timeLabel.className = "p-2 bg-slate-900 text-[9px] text-slate-400 border-t border-slate-800 text-center truncate select-none";
+                
+                // Format label visual tanggal
+                const startDate = parseCustomDate(block.startDate);
+                const formatLabel = startDate.toLocaleDateString('id-ID', {day: 'numeric', month: 'short'}) + ' ' + startDate.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+                timeLabel.innerText = formatLabel;
+                timeLabel.title = `Awal: ${block.startDate}\nAkhir: ${block.endDate}`;
+
+                // Indikator Penanda bahwa blok ini adalah block live yang aktif berjalan saat ini (paling baru)
+                if (index === blockData.length - 1) {
+                    col.classList.add('ring-1', 'ring-indigo-500/50', 'bg-indigo-950/10');
+                    const liveBadge = document.createElement('span');
+                    liveBadge.className = "absolute top-1 right-1 px-1 bg-indigo-600 text-[8px] text-white font-bold rounded-sm uppercase tracking-wide";
+                    liveBadge.innerText = "Running";
+                    col.appendChild(liveBadge);
+                }
+
+                col.appendChild(barContainer);
+                col.appendChild(timeLabel);
+                chartContainer.appendChild(col);
+            });
+
+            // Otomatis geser ke kanan agar block terbaru langsung tampil terdepan
+            setTimeout(() => {
+                chartContainer.scrollLeft = chartContainer.scrollWidth;
+            }, 100);
+        }
+
+        // Update bagian widget status signal ringkasan saat ini
+        function updateSummaryWidget(blockData, showNeutral) {
+            if (blockData.length === 0) return;
+
+            // Kita ambil block paling baru yang sedang berjalan (aktif)
+            const activeBlock = blockData[blockData.length - 1];
+
+            // Tampilkan Statistik lilin pembentuk
+            document.getElementById('statsBullCount').innerText = activeBlock.bullCount;
+            document.getElementById('statsBearCount').innerText = activeBlock.bearCount;
+            document.getElementById('statsTotalBars').innerText = `${activeBlock.totalBars} Bar`;
+
+            // Atur visual gauge
+            const sellBar = document.getElementById('gaugeSell');
+            const neutBar = document.getElementById('gaugeNeutral');
+            const buyBar = document.getElementById('gaugeBuy');
+
+            sellBar.style.width = `${activeBlock.sell}%`;
+            buyBar.style.width = `${activeBlock.buy}%`;
+            document.getElementById('lblGaugeSell').innerText = `SELL ${activeBlock.sell}%`;
+            document.getElementById('lblGaugeBuy').innerText = `BUY ${activeBlock.buy}%`;
+
+            if (showNeutral) {
+                neutBar.classList.remove('hidden');
+                document.getElementById('lblGaugeNeut').classList.remove('hidden');
+                neutBar.style.width = `${activeBlock.neutral}%`;
+                document.getElementById('lblGaugeNeut').innerText = `NEUTRAL ${activeBlock.neutral}%`;
+            } else {
+                neutBar.classList.add('hidden');
+                document.getElementById('lblGaugeNeut').classList.add('hidden');
+                neutBar.style.width = '0%';
+            }
+
+            // Tentukan arah dominasi signal
+            const signalDir = document.getElementById('signalDirection');
+            const signalStr = document.getElementById('signalStrength');
+
+            if (activeBlock.buy > activeBlock.sell && activeBlock.buy > activeBlock.neutral) {
+                signalDir.innerText = "BULLISH ACCUMULATION (BUY)";
+                signalDir.className = "text-xl font-black text-emerald-400";
+                signalStr.innerText = `(Kekuatan Buy ${activeBlock.buy}%)`;
+            } else if (activeBlock.sell > activeBlock.buy && activeBlock.sell > activeBlock.neutral) {
+                signalDir.innerText = "BEARISH ACCUMULATION (SELL)";
+                signalDir.className = "text-xl font-black text-rose-400";
+                signalStr.innerText = `(Kekuatan Sell ${activeBlock.sell}%)`;
+            } else {
+                signalDir.innerText = "RANGING / SIDEWAYS (NEUTRAL)";
+                signalDir.className = "text-xl font-black text-slate-400";
+                signalStr.innerText = `(Kekuatan Ragu ${activeBlock.neutral}%)`;
+            }
+        }
+
+        // Membuat data tabel riwayat block historis di bawah panel utama
+        function drawHistoryTable(blockData, showNeutral) {
+            const tableBody = document.getElementById('historyTableBody');
+            tableBody.innerHTML = '';
+
+            // Render baris data dari yang TERBARU di atas
+            const sortedData = [...blockData].reverse();
+
+            sortedData.forEach((block, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/40 border-b border-slate-800/40 transition-colors";
+
+                // Format Waktu Cantik
+                const startD = parseCustomDate(block.startDate);
+                const endD = parseCustomDate(block.endDate);
+                
+                const timeStr = `
+                    <div class="font-medium text-slate-100">${startD.toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Rentang: ${startD.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})} - ${endD.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</div>
+                `;
+
+                // Signal Badge
+                let signalBadge = '';
+                if (block.buy > block.sell && block.buy > block.neutral) {
+                    signalBadge = `<span class="px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded text-[10px] font-bold">BUY ${block.buy}%</span>`;
+                } else if (block.sell > block.buy && block.sell > block.neutral) {
+                    signalBadge = `<span class="px-2 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded text-[10px] font-bold">SELL ${block.sell}%</span>`;
+                } else {
+                    signalBadge = `<span class="px-2 py-1 bg-slate-500/10 text-slate-400 border border-slate-500/30 rounded text-[10px] font-bold">NEUTRAL ${block.neutral}%</span>`;
+                }
+
+                // Append status "RUNNING" jika index 0 (yaitu data yang sedang aktif diproduksi sekarang)
+                const labelRun = index === 0 ? '<span class="ml-2 text-[9px] px-1 bg-indigo-600 text-white font-bold rounded">LIVE</span>' : '';
+
+                tr.innerHTML = `
+                    <td class="p-3">${timeStr}</td>
+                    <td class="p-3 text-center text-emerald-400 font-semibold">${block.buy}%</td>
+                    <td class="p-3 text-center text-rose-400 font-semibold">${block.sell}%</td>
+                    <td class="p-3 text-center text-slate-400">${showNeutral ? block.neutral + '%' : '-'}</td>
+                    <td class="p-3 text-center">${signalBadge}${labelRun}</td>
+                `;
+
+                tableBody.appendChild(tr);
+            });
+        }
     </script>
 </body>
 </html>
