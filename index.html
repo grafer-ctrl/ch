@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gear Channel Signal Dashboard</title>
+    <!-- Tailwind CSS untuk UI modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- TradingView Lightweight Charts untuk grafik trading profesional -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans">
+
+    <!-- Header -->
+    <header class="border-b border-gray-800 bg-gray-900 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 p-2 rounded-lg">
+                <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Gear Channel Signal</h1>
+                <p class="text-xs text-gray-400">Strategi Non-Repaint Swing Terkonfirmasi</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span id="connection-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400">
+                <span class="w-2 h-2 mr-1.5 rounded-full bg-green-400 animate-pulse"></span> Siap
+            </span>
+        </div>
+    </header>
+
+    <main class="p-4 lg:p-6 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- Panel Kontrol & Pengaturan (Kolom Kiri) -->
+        <section class="lg:col-span-1 space-y-6">
+            <!-- Form Input Ticker -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
+                <h2 class="text-md font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i> Instrumen & Parameter
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Simbol Yahoo Finance</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="symbol-input" value="EURUSD=X" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            <button id="btn-scan" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1">
+                                <i data-lucide="refresh-cw" class="w-4 h-4" id="btn-scan-icon"></i> Scan
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1">Contoh: BTC-USD, EURUSD=X, ^JKSE, BBRI.JK</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Timeframe (Interval)</label>
+                        <select id="interval-input" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            <option value="15m">15 Menit (Data 5 Hari)</option>
+                            <option value="30m">30 Menit (Data 5 Hari)</option>
+                            <option value="1h" selected>1 Jam (Data 1 Bulan)</option>
+                            <option value="1d">1 Hari (Data 1 Tahun)</option>
+                        </select>
+                    </div>
+
+                    <div class="border-t border-gray-800 pt-3">
+                        <button id="toggle-advanced" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                            <span>Pengaturan Indikator</span> <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                        </button>
+                        
+                        <div id="advanced-settings" class="hidden space-y-3 mt-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-gray-400">MA Period (Saluran)</label>
+                                    <input type="number" id="ma-period" value="50" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-400">ATR Period</label>
+                                    <input type="number" id="atr-period" value="14" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-gray-400">ATR Multiplier</label>
+                                    <input type="number" step="0.1" id="atr-mult" value="2.5" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-400">Signal Offset (Pips)</label>
+                                    <input type="number" step="0.5" id="signal-offset" value="10.0" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-gray-400">Fast EMA Ribbon</label>
+                                    <input type="number" id="fast-ma" value="12" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-400">Slow EMA Ribbon</label>
+                                    <input type="number" id="slow-ma" value="26" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Sinyal Terakhir -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
+                <h3 class="text-md font-semibold mb-3 flex items-center gap-2">
+                    <i data-lucide="bell" class="w-4 h-4 text-indigo-400"></i> Status Sinyal Terkini
+                </h3>
+                <div id="latest-signal-box" class="flex flex-col items-center justify-center py-6 px-4 bg-gray-850 rounded-lg border border-gray-800">
+                    <span class="text-sm text-gray-400">Belum Ada Analisis</span>
+                </div>
+                <div class="mt-4 flex items-center justify-between text-xs text-gray-400 border-t border-gray-800 pt-3">
+                    <span>Arah Ribbon (EMA 12/26):</span>
+                    <span id="ribbon-status" class="font-semibold">-</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Grafik & Riwayat Sinyal (Kolom Kanan) -->
+        <section class="lg:col-span-3 space-y-6">
+            
+            <!-- Area Grafik -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-md font-semibold flex items-center gap-2">
+                        <i data-lucide="candlestick-chart" class="w-4 h-4 text-indigo-400"></i> Grafik Interaktif (Lightweight Chart)
+                    </h3>
+                    <div class="text-xs text-gray-400" id="symbol-display">-</div>
+                </div>
+                <div id="chart-container" class="w-full h-[450px] bg-gray-950 rounded-lg overflow-hidden relative">
+                    <!-- Loading overlay -->
+                    <div id="loading" class="absolute inset-0 bg-gray-950/80 flex items-center justify-center z-10 hidden">
+                        <div class="flex flex-col items-center space-y-3">
+                            <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-sm text-gray-300">Mengunduh data pasar...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Riwayat Sinyal -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
+                <h3 class="text-md font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i> Log Sinyal Historis Terkonfirmasi
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-800 text-xs text-gray-400 uppercase tracking-wider">
+                                <th class="py-3 px-4">Waktu</th>
+                                <th class="py-3 px-4">Sinyal</th>
+                                <th class="py-3 px-4">Harga Swing</th>
+                                <th class="py-3 px-4">Batas Atas/Bawah</th>
+                                <th class="py-3 px-4">Status Saluran</th>
+                            </tr>
+                        </thead>
+                        <tbody id="signal-table-body" class="text-sm divide-y divide-gray-800">
+                            <tr>
+                                <td colspan="5" class="py-6 text-center text-gray-500">Gunakan tombol "Scan" di atas untuk mencari sinyal.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer penjelasan -->
+    <footer class="text-center py-8 text-xs text-gray-500 max-w-4xl mx-auto px-6 border-t border-gray-900 mt-12">
+        <p><strong>Penjelasan Logika Non-Repaint:</strong> Sistem ini menghitung ulang parameter indikator berdasarkan data penutupan bar secara berurutan. Sinyal dipicu pada bar ke-3 dari belakang (atau bar indeks ke-2 dari saat ini) apabila titik terendah (Low) atau tertinggi (High) menyentuh atau melampaui band luar yang diperlebar oleh ATR, setelah candle berikutnya ditutup untuk menghindari pemalsuan gambar (*repaint*).</p>
+    </footer>
+
+    <script>
+        // Inisialisasi ikon Lucide
+        lucide.createIcons();
+
+        // Elemen UI
+        const toggleAdvanced = document.getElementById('toggle-advanced');
+        const advancedSettings = document.getElementById('advanced-settings');
+        const symbolInput = document.getElementById('symbol-input');
+        const intervalInput = document.getElementById('interval-input');
+        const btnScan = document.getElementById('btn-scan');
+        const btnScanIcon = document.getElementById('btn-scan-icon');
+        const loading = document.getElementById('loading');
+        const latestSignalBox = document.getElementById('latest-signal-box');
+        const ribbonStatusEl = document.getElementById('ribbon-status');
+        const symbolDisplay = document.getElementById('symbol-display');
+        const signalTableBody = document.getElementById('signal-table-body');
+        const chartContainer = document.getElementById('chart-container');
+
+        // Toggle form parameter tambahan
+        toggleAdvanced.addEventListener('click', () => {
+            advancedSettings.classList.toggle('hidden');
+        });
+
+        // Inisialisasi Grafik TradingView Lightweight Charts
+        let chart = null;
+        let candleSeries = null;
+        let upperBandSeries = null;
+        let lowerBandSeries = null;
+        let fastEMASeries = null;
+        let slowEMASeries = null;
+
+        function initializeChart() {
+            if (chart) {
+                chart.remove();
+            }
+
+            chart = LightweightCharts.createChart(chartContainer, {
+                width: chartContainer.clientWidth,
+                height: 450,
+                layout: {
+                    background: { type: 'solid', color: '#111827' },
+                    textColor: '#9ca3af',
+                },
+                grid: {
+                    vertLines: { color: '#1f2937' },
+                    horzLines: { color: '#1f2937' },
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                },
+                rightPriceScale: {
+                    borderColor: '#1f2937',
+                },
+                timeScale: {
+                    borderColor: '#1f2937',
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+            });
+
+            // Tambahkan serial visualisasi chart
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#10b981',
+                downColor: '#ef4444',
+                borderUpColor: '#10b981',
+                borderDownColor: '#ef4444',
+                wickUpColor: '#10b981',
+                wickDownColor: '#ef4444',
+            });
+
+            upperBandSeries = chart.addLineSeries({
+                color: '#ef4444', // Red / Batas Atas
+                lineWidth: 1.5,
+                title: 'Batas Atas (ATR + LWMA)'
+            });
+
+            lowerBandSeries = chart.addLineSeries({
+                color: '#10b981', // Green / Batas Bawah
+                lineWidth: 1.5,
+                title: 'Batas Bawah'
+            });
+
+            fastEMASeries = chart.addLineSeries({
+                color: '#3b82f6', // Biru
+                lineWidth: 1,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                title: 'Fast EMA (Ribbon)'
+            });
+
+            slowEMASeries = chart.addLineSeries({
+                color: '#a855f7', // Ungu
+                lineWidth: 1,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                title: 'Slow EMA (Ribbon)'
+            });
+
+            // Handle responsivitas ukuran chart
+            window.addEventListener('resize', () => {
+                chart.resize(chartContainer.clientWidth, 450);
+            });
+        }
+
+        // Jalankan inisialisasi awal
+        initializeChart();
+
+        // === FUNGSI MATEMATIKA / INDIKATOR ===
+
+        // Linear Weighted Moving Average (LWMA)
+        function calculateLWMA(values, period) {
+            let lwma = new Array(values.length).fill(null);
+            let weightSum = (period * (period + 1)) / 2;
+            for (let i = period - 1; i < values.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < period; j++) {
+                    sum += values[i - period + 1 + j] * (j + 1);
+                }
+                lwma[i] = sum / weightSum;
+            }
+            return lwma;
+        }
+
+        // Exponential Moving Average (EMA)
+        function calculateEMA(values, period) {
+            let ema = new Array(values.length).fill(null);
+            if (values.length < period) return ema;
+
+            // Inisialisasi awal memakai rata-rata aritmetika (SMA)
+            let sum = 0;
+            for (let i = 0; i < period; i++) {
+                sum += values[i];
+            }
+            ema[period - 1] = sum / period;
+
+            let k = 2 / (period + 1);
+            for (let i = period; i < values.length; i++) {
+                ema[i] = values[i] * k + ema[i - 1] * (1 - k);
+            }
+            return ema;
+        }
+
+        // Average True Range (ATR)
+        function calculateATR(high, low, close, period) {
+            let atr = new Array(high.length).fill(null);
+            if (high.length < period) return atr;
+
+            let tr = new Array(high.length).fill(0);
+            tr[0] = high[0] - low[0];
+            for (let i = 1; i < high.length; i++) {
+                let tr1 = high[i] - low[i];
+                let tr2 = Math.abs(high[i] - close[i - 1]);
+                let tr3 = Math.abs(low[i] - close[i - 1]);
+                tr[i] = Math.max(tr1, tr2, tr3);
+            }
+
+            // Simple Moving Average dari True Range
+            let sum = 0;
+            for (let i = 0; i < period; i++) {
+                sum += tr[i];
+            }
+            atr[period - 1] = sum / period;
+            for (let i = period; i < high.length; i++) {
+                sum = sum - tr[i - period] + tr[i];
+                atr[i] = sum / period;
+            }
+            return atr;
+        }
+
+        // Aturan penentuan otomatis pips size
+        function getPipSize(price) {
+            if (price > 1000) return 1.0;
+            if (price > 50) return 0.1;
+            if (price > 1) return 0.01;
+            return 0.0001;
+        }
+
+        // Alert suara berbasis Web Audio API
+        function playAlertSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'buy') {
+                    // Nada naik harmonis untuk buy
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.4);
+                } else {
+                    // Nada turun/peringatan tajam untuk sell
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(392.00, ctx.currentTime); // G4
+                    osc.frequency.setValueAtTime(349.23, ctx.currentTime + 0.1); // F4
+                    osc.frequency.setValueAtTime(261.63, ctx.currentTime + 0.2); // C4
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.4);
+                }
+            } catch (e) {
+                console.warn('Gagal memutar audio alert:', e);
+            }
+        }
+
+        // Integrasi API Yahoo dengan CORS Bypass gratis
+        async function fetchYahooData(symbol, interval) {
+            let range = '1mo'; // Default
+            if (interval === '15m' || interval === '30m') range = '5d';
+            if (interval === '1d') range = '1y';
+
+            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+            // Menggunakan proxy gratis allorigins untuk melewati rintangan CORS
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`;
+
+            const response = await fetch(proxyUrl);
+            if (!response.ok) {
+                throw new Error("Gagal mengambil data dari API proxy.");
+            }
+            const data = await response.json();
+            
+            if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
+                throw new Error("Format respon Yahoo Finance salah atau simbol tidak terdaftar.");
+            }
+
+            return data.chart.result[0];
+        }
+
+        // === MAIN ENGINE SCANNER & PROSESOR SINYAL ===
+        async function runScanner() {
+            loading.classList.remove('hidden');
+            btnScanIcon.classList.add('animate-spin');
+            btnScan.disabled = true;
+
+            const symbol = symbolInput.value.toUpperCase().trim();
+            const interval = intervalInput.value;
+
+            // Membaca pengaturan kustom
+            const InpMAPeriod = parseInt(document.getElementById('ma-period').value) || 50;
+            const InpATRPeriod = parseInt(document.getElementById('atr-period').value) || 14;
+            const InpATRMultiplier = parseFloat(document.getElementById('atr-mult').value) || 2.5;
+            const InpFastMAPeriod = parseInt(document.getElementById('fast-ma').value) || 12;
+            const InpSlowMAPeriod = parseInt(document.getElementById('slow-ma').value) || 26;
+            const InpSignalOffset = parseFloat(document.getElementById('signal-offset').value) || 10.0;
+
+            try {
+                const result = await fetchYahooData(symbol, interval);
+                const timestamps = result.timestamp;
+                const quote = result.indicators.quote[0];
+
+                if (!timestamps || timestamps.length === 0) {
+                    throw new Error("Gagal memuat data histori instrumen.");
+                }
+
+                // Normalisasi dan hapus bar kosong (null candle)
+                const candles = [];
+                for (let i = 0; i < timestamps.length; i++) {
+                    if (quote.close[i] !== null && quote.high[i] !== null && quote.low[i] !== null && quote.open[i] !== null) {
+                        candles.push({
+                            time: timestamps[i],
+                            open: quote.open[i],
+                            high: quote.high[i],
+                            low: quote.low[i],
+                            close: quote.close[i]
+                        });
+                    }
+                }
+
+                if (candles.length < Math.max(InpMAPeriod, InpSlowMAPeriod) + 10) {
+                    throw new Error("Panjang histori candle terlalu sedikit untuk kalkulasi indikator.");
+                }
+
+                const length = candles.length;
+                const closes = candles.map(c => c.close);
+                const highs = candles.map(c => c.high);
+                const lows = candles.map(c => c.low);
+
+                // Hitung Indikator
+                const lwmaCenter = calculateLWMA(closes, InpMAPeriod);
+                const atr = calculateATR(highs, lows, closes, InpATRPeriod);
+                const fastEMA = calculateEMA(closes, InpFastMAPeriod);
+                const slowEMA = calculateEMA(closes, InpSlowMAPeriod);
+
+                const upperBand = [];
+                const lowerBand = [];
+                
+                for (let i = 0; i < length; i++) {
+                    if (lwmaCenter[i] !== null && atr[i] !== null) {
+                        upperBand.push(lwmaCenter[i] + (atr[i] * InpATRMultiplier));
+                        lowerBand.push(lwmaCenter[i] - (atr[i] * InpATRMultiplier));
+                    } else {
+                        upperBand.push(null);
+                        lowerBand.push(null);
+                    }
+                }
+
+                // Reset visual grafik
+                initializeChart();
+                symbolDisplay.textContent = `${symbol} (${interval})`;
+
+                const formattedCandles = candles.map(c => ({
+                    time: c.time,
+                    open: c.open,
+                    high: c.high,
+                    low: c.low,
+                    close: c.close
+                }));
+                candleSeries.setData(formattedCandles);
+
+                const formattedUpper = candles.map((c, idx) => ({ time: c.time, value: upperBand[idx] })).filter(d => d.value !== null);
+                const formattedLower = candles.map((c, idx) => ({ time: c.time, value: lowerBand[idx] })).filter(d => d.value !== null);
+                const formattedFast = candles.map((c, idx) => ({ time: c.time, value: fastEMA[idx] })).filter(d => d.value !== null);
+                const formattedSlow = candles.map((c, idx) => ({ time: c.time, value: slowEMA[idx] })).filter(d => d.value !== null);
+
+                upperBandSeries.setData(formattedUpper);
+                lowerBandSeries.setData(formattedLower);
+                fastEMASeries.setData(formattedFast);
+                slowEMASeries.setData(formattedSlow);
+
+                // Deteksi Sinyal Gir (3-Bar Swing Non-Repaint Konfirmasi)
+                const markers = [];
+                const historicalSignals = [];
+
+                // Ambil basis estimasi pips dari harga candle terakhir
+                const referencePrice = closes[length - 1];
+                const pipSize = getPipSize(referencePrice);
+                const offset = InpSignalOffset * pipSize;
+
+                // Loop dari indeks 3 sampai N-3 (menyisakan data paling ujung untuk swing confirmation)
+                for (let k = 3; k < length - 2; k++) {
+                    if (upperBand[k] === null || lowerBand[k] === null) continue;
+
+                    const dateStr = new Date(candles[k].time * 1000).toLocaleString('id-ID');
+
+                    // 1. Logika Sinyal BUY (Swing Low pada k)
+                    // k adalah bar i+2 dalam MQL4, k-1 adalah i+3 (lebih lama), k+1 adalah i+1 (lebih baru)
+                    if (lows[k] < lows[k-1] && lows[k] < lows[k+1]) {
+                        if (lows[k] <= lowerBand[k] + (5 * pipSize)) {
+                            markers.push({
+                                time: candles[k].time,
+                                position: 'belowBar',
+                                color: '#10b981',
+                                shape: 'arrowUp',
+                                text: 'BUY (Gear)',
+                                size: 1.5
+                            });
+
+                            historicalSignals.push({
+                                timeRaw: candles[k].time,
+                                date: dateStr,
+                                type: 'BUY',
+                                price: lows[k].toFixed(5),
+                                bandLimit: lowerBand[k].toFixed(5),
+                                status: 'Menyentuh Band Bawah'
+                            });
+                        }
+                    }
+
+                    // 2. Logika Sinyal SELL (Swing High pada k)
+                    if (highs[k] > highs[k-1] && highs[k] > highs[k+1]) {
+                        if (highs[k] >= upperBand[k] - (5 * pipSize)) {
+                            markers.push({
+                                time: candles[k].time,
+                                position: 'aboveBar',
+                                color: '#ef4444',
+                                shape: 'arrowDown',
+                                text: 'SELL (Gear)',
+                                size: 1.5
+                            });
+
+                            historicalSignals.push({
+                                timeRaw: candles[k].time,
+                                date: dateStr,
+                                type: 'SELL',
+                                price: highs[k].toFixed(5),
+                                bandLimit: upperBand[k].toFixed(5),
+                                status: 'Menyentuh Band Atas'
+                            });
+                        }
+                    }
+                }
+
+                // Gambar panah sinyal di chart
+                candleSeries.setMarkers(markers);
+
+                // Update Tabel Riwayat Sinyal
+                historicalSignals.reverse(); // Urutkan dari yang terbaru
+                if (historicalSignals.length === 0) {
+                    signalTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="py-6 text-center text-gray-500">Tidak ada riwayat sinyal terdeteksi pada bar histori saat ini.</td>
+                        </tr>`;
+                } else {
+                    signalTableBody.innerHTML = historicalSignals.map(sig => `
+                        <tr class="hover:bg-gray-850 border-b border-gray-800">
+                            <td class="py-3 px-4 text-xs font-mono text-gray-400">${sig.date}</td>
+                            <td class="py-3 px-4">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                                    sig.type === 'BUY' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                                }">
+                                    ${sig.type}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 font-mono font-semibold">${sig.price}</td>
+                            <td class="py-3 px-4 font-mono text-gray-400">${sig.bandLimit}</td>
+                            <td class="py-3 px-4 text-xs text-gray-400">${sig.status}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Tentukan status Ribbon pita terakhir (EMA 12 vs 26)
+                const lastFast = fastEMA[length - 1];
+                const lastSlow = slowEMA[length - 1];
+                if (lastFast > lastSlow) {
+                    ribbonStatusEl.textContent = 'Bullish (Biru > Ungu)';
+                    ribbonStatusEl.className = 'font-semibold text-green-400';
+                } else {
+                    ribbonStatusEl.textContent = 'Bearish (Biru < Ungu)';
+                    ribbonStatusEl.className = 'font-semibold text-red-400';
+                }
+
+                // Identifikasi jika ada sinyal segar baru terbentuk di bar yang baru terkonfirmasi (N-3)
+                const lastConfirmedBarIdx = length - 3;
+                let activeSignal = null;
+
+                const lastConfirmedSignal = historicalSignals.find(s => s.timeRaw === candles[lastConfirmedBarIdx].time);
+                
+                if (lastConfirmedSignal) {
+                    activeSignal = lastConfirmedSignal;
+                    playAlertSound(activeSignal.type.toLowerCase());
+                }
+
+                if (activeSignal) {
+                    latestSignalBox.innerHTML = `
+                        <div class="text-center">
+                            <div class="inline-flex p-3 rounded-full ${activeSignal.type === 'BUY' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} mb-2">
+                                <i data-lucide="${activeSignal.type === 'BUY' ? 'trending-up' : 'trending-down'}" class="w-8 h-8"></i>
+                            </div>
+                            <div class="text-lg font-bold ${activeSignal.type === 'BUY' ? 'text-green-400' : 'text-red-400'}">${activeSignal.type} SIGNAL</div>
+                            <div class="text-xs text-gray-400 mt-1">Harga Swing: <span class="font-mono text-white font-semibold">${activeSignal.price}</span></div>
+                            <div class="text-[10px] text-gray-500 mt-2">Dikonfirmasi pada: ${activeSignal.date}</div>
+                        </div>
+                    `;
+                } else {
+                    latestSignalBox.innerHTML = `
+                        <div class="text-center text-gray-500 py-3">
+                            <i data-lucide="minus-circle" class="w-8 h-8 mx-auto mb-2 text-gray-600"></i>
+                            <span class="text-xs">Tidak ada sinyal aktif di bar konfirmasi saat ini (Menunggu konfirmasi swing baru).</span>
+                        </div>
+                    `;
+                }
+
+                lucide.createIcons();
+                chart.timeScale().fitContent();
+
+            } catch (err) {
+                console.error(err);
+                alert(`Error saat memproses data: ${err.message}`);
+                signalTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-6 text-center text-red-400">Terjadi kegagalan pemuatan data. Mohon ganti simbol/interval atau coba lagi.</td>
+                    </tr>`;
+            } finally {
+                loading.classList.add('hidden');
+                btnScanIcon.classList.remove('animate-spin');
+                btnScan.disabled = false;
+            }
+        }
+
+        // Jalankan scanner jika tombol diklik
+        btnScan.addEventListener('click', runScanner);
+
+        // Jalankan scan otomatis pertama kali saat halaman dimuat
+        setTimeout(runScanner, 1000);
+    </script>
+</body>
+</html>
